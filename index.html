@@ -108,9 +108,12 @@
     padding:12px 16px;margin-bottom:12px;
   }
   .flow .flbl{font-size:11px;letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase;font-weight:600;margin-bottom:4px}
-  .flow .fval{font-size:15px}
-  .flow .fval b{color:var(--urine);font-weight:700}
-  .flow .fcount{font-size:11px;color:var(--ink-soft);font-weight:400}
+  .flow .fval{font-size:14px;color:var(--ink-soft)}
+  .flow .frow{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:14px}
+  .flow .frow:not(:last-child){border-bottom:1px dashed var(--rule)}
+  .flow .frow .famt{font-weight:700;color:var(--ink)}
+  .flow .frow .fcnt{color:var(--ink-soft);font-weight:400;margin-left:4px}
+  .flow .frow .favg{font-weight:700;color:var(--urine)}
 
   /* table */
   .log{background:var(--card);border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
@@ -327,12 +330,18 @@
     $('fillP').style.height=Math.min(100,sp/scale*100)+'%';
     drawTicks($('tubeW'),scale); drawTicks($('tubeP'),scale);
 
-    // อัตราการไหลเฉลี่ย — คิดจากทุกวันที่มีข้อมูล (ไม่ใช่แค่วันที่กำลังดู)
-    const flowEntries=entries.filter(e=>e.pee>0 && e.sec>0);
-    if(flowEntries.length){
-      const avgSec=flowEntries.reduce((s,e)=>s+e.sec,0)/flowEntries.length;
-      const avgPee=flowEntries.reduce((s,e)=>s+e.pee,0)/flowEntries.length;
-      $('flowVal').innerHTML=`เฉลี่ย <b>${fmtNum(avgSec)} วิ</b> → <b>${fmtNum(avgPee)} มล</b> <span class="fcount">(${flowEntries.length} ครั้ง)</span>`;
+    // อัตราการไหลเฉลี่ย แยกตามปริมาณ — คิดจากทุกวันที่มีข้อมูล (ไม่ใช่แค่วันที่กำลังดู)
+    const flowGroups={};
+    entries.forEach(e=>{
+      if(e.pee>0 && e.sec>0) (flowGroups[e.pee]=flowGroups[e.pee]||[]).push(e.sec);
+    });
+    const flowKeys=Object.keys(flowGroups).map(Number).sort((a,b)=>a-b);
+    if(flowKeys.length){
+      $('flowVal').innerHTML=flowKeys.map(k=>{
+        const secs=flowGroups[k];
+        const avg=secs.reduce((s,x)=>s+x,0)/secs.length;
+        return `<div class="frow"><span><span class="famt">${k.toLocaleString()} มล</span> <span class="fcnt">× ${secs.length} ครั้ง</span></span><span class="favg">${fmtNum(avg)} วิ</span></div>`;
+      }).join('');
     }else{
       $('flowVal').textContent='ยังไม่มีข้อมูล (กรอกระยะเวลาตอนบันทึกฉี่)';
     }
