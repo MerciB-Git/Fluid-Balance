@@ -102,6 +102,16 @@
   .add .w{background:var(--water)}
   .add .p{background:var(--urine)}
 
+  /* อัตราการไหลเฉลี่ย */
+  .flow{
+    background:var(--card);border:1px solid var(--rule);border-radius:var(--r);
+    padding:12px 16px;margin-bottom:12px;
+  }
+  .flow .flbl{font-size:11px;letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase;font-weight:600;margin-bottom:4px}
+  .flow .fval{font-size:15px}
+  .flow .fval b{color:var(--urine);font-weight:700}
+  .flow .fcount{font-size:11px;color:var(--ink-soft);font-weight:400}
+
   /* table */
   .log{background:var(--card);border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
   .log-head,.row{display:grid;grid-template-columns:44px 1fr 1fr 30px;gap:6px;align-items:center;padding:9px 12px}
@@ -213,6 +223,11 @@
     <button class="p" id="addP">＋ ฉี่</button>
   </div>
 
+  <div class="flow" id="flowCard">
+    <div class="flbl">อัตราการไหลเฉลี่ย (ทั้งหมด)</div>
+    <div class="fval mono" id="flowVal">ยังไม่มีข้อมูล</div>
+  </div>
+
   <div class="log">
     <div class="log-head">
       <div>เวลา</div>
@@ -241,7 +256,7 @@
   const TH_MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const PRESET_W=[150,250,350,500], PRESET_P=[100,200,300,400];
 
-  let entries=[];              // {id,date:'YYYY-MM-DD',time:'HH:MM',drink,pee}
+  let entries=[];              // {id,date:'YYYY-MM-DD',time:'HH:MM',drink,pee,sec}
   let view=todayKey();
   let mem=false;               // fallback ถ้าเซฟไม่ได้
 
@@ -257,6 +272,7 @@
     return TH_DAY[dt.getDay()].slice(0,2)+' '+d+' '+TH_MON[m-1];
   }
   function nowTime(){const d=new Date();return p2(d.getHours())+':'+p2(d.getMinutes());}
+  function fmtNum(n){return n.toLocaleString(undefined,{maximumFractionDigits:1});}
 
   // เซฟได้ 2 ทาง: ในแอป Claude ใช้ window.storage / เปิดจากเบราว์เซอร์ใช้ localStorage
   const hasCloud = typeof window.storage!=='undefined' && window.storage && window.storage.get;
@@ -311,6 +327,16 @@
     $('fillP').style.height=Math.min(100,sp/scale*100)+'%';
     drawTicks($('tubeW'),scale); drawTicks($('tubeP'),scale);
 
+    // อัตราการไหลเฉลี่ย — คิดจากทุกวันที่มีข้อมูล (ไม่ใช่แค่วันที่กำลังดู)
+    const flowEntries=entries.filter(e=>e.pee>0 && e.sec>0);
+    if(flowEntries.length){
+      const avgSec=flowEntries.reduce((s,e)=>s+e.sec,0)/flowEntries.length;
+      const avgPee=flowEntries.reduce((s,e)=>s+e.pee,0)/flowEntries.length;
+      $('flowVal').innerHTML=`เฉลี่ย <b>${fmtNum(avgSec)} วิ</b> → <b>${fmtNum(avgPee)} มล</b> <span class="fcount">(${flowEntries.length} ครั้ง)</span>`;
+    }else{
+      $('flowVal').textContent='ยังไม่มีข้อมูล (กรอกระยะเวลาตอนบันทึกฉี่)';
+    }
+
     // ตาราง + ยอดสะสมทุกครั้งที่กรอก
     const rows=$('rows');
     if(!list.length){
@@ -321,7 +347,7 @@
     rows.innerHTML=list.map(e=>{
       rw+=e.drink||0; rp+=e.pee||0;
       const cw=e.drink?`<span class="amt w mono">${e.drink.toLocaleString()}</span><span class="run mono">รวม ${rw.toLocaleString()}</span>`:'<span class="muted mono">–</span>';
-      const cp=e.pee?`<span class="amt p mono">${e.pee.toLocaleString()}</span><span class="run mono">รวม ${rp.toLocaleString()}</span>`:'<span class="muted mono">–</span>';
+      const cp=e.pee?`<span class="amt p mono">${e.pee.toLocaleString()}</span><span class="run mono">${e.sec?e.sec+' วิ · ':''}รวม ${rp.toLocaleString()}</span>`:'<span class="muted mono">–</span>';
       return `<div class="row">
         <div class="mono" style="font-size:13px">${e.time}</div>
         <div class="cell-r">${cw}</div>
@@ -358,6 +384,11 @@
         <label>จำนวน (${w?'ml':'cc'})</label>
         <input id="amt" type="number" inputmode="numeric" min="1" placeholder="พิมพ์เอง เช่น 180">
       </div>
+      ${w?'':`
+      <div class="field">
+        <label>ระยะเวลา (วินาที)</label>
+        <input id="sec" type="number" inputmode="numeric" min="1" placeholder="เช่น 35">
+      </div>`}
       <div class="two">
         <div class="field"><label>วัน</label><input id="d" type="date" value="${view}"></div>
         <div class="field"><label>เวลา</label><input id="t" type="time" value="${nowTime()}"></div>
@@ -378,10 +409,15 @@
     $('ok').onclick=()=>{
       const v=parseInt($('amt').value,10);
       if(!v||v<=0){ $('amt').focus(); toast('ใส่จำนวนก่อนนะ'); return; }
+      let sec=0;
+      if(!w){
+        sec=parseInt($('sec').value,10);
+        if(!sec||sec<=0){ $('sec').focus(); toast('ใส่ระยะเวลาก่อนนะ'); return; }
+      }
       entries.push({
         id:Date.now()+''+Math.random().toString(16).slice(2,6),
         date:$('d').value||view, time:$('t').value||nowTime(),
-        drink: w?v:0, pee: w?0:v
+        drink: w?v:0, pee: w?0:v, sec: w?0:sec
       });
       view=$('d').value||view;
       save(); close(); render();
@@ -406,7 +442,7 @@
     if(!list.length){toast('วันนี้ยังไม่มีข้อมูล');return;}
     const sw=list.reduce((s,e)=>s+e.drink,0), sp=list.reduce((s,e)=>s+e.pee,0);
     const txt='บันทึกน้ำเข้า-น้ำออก '+view+'\n'
-      +list.map(e=>`${e.time}  ดื่ม ${e.drink||'-'} ml  ฉี่ ${e.pee||'-'} cc`).join('\n')
+      +list.map(e=>`${e.time}  ดื่ม ${e.drink||'-'} ml  ฉี่ ${e.pee||'-'} cc${e.pee&&e.sec?' ('+e.sec+' วิ)':''}`).join('\n')
       +`\n\nรวมดื่ม ${sw} ml | รวมฉี่ ${sp} cc | สมดุล ${sw-sp>=0?'+':''}${sw-sp}`;
     try{ await navigator.clipboard.writeText(txt); toast('คัดลอกแล้ว เอาไปส่งต่อได้เลย'); }
     catch(e){ toast('คัดลอกไม่สำเร็จ'); }
