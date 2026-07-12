@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>น้ำเข้า-น้ำออก</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#EDF2F6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="น้ำเข้า-ออก">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --ink:#0F2438;
+    --ink-soft:#5E7387;
+    --paper:#EDF2F6;
+    --card:#FFFFFF;
+    --rule:#D8E2EA;
+    --water:#0E7FBF;
+    --water-lt:#CFE8F7;
+    --urine:#CE9412;
+    --urine-lt:#F7E9BF;
+    --danger:#B23A2E;
+    --r:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0}
+  #app{
+    font-family:'IBM Plex Sans Thai',system-ui,-apple-system,'Sarabun',sans-serif;
+    color:var(--ink);
+    background:var(--paper);
+    background-image:linear-gradient(var(--rule) 1px,transparent 1px);
+    background-size:100% 28px;
+    max-width:440px;margin:0 auto;padding:14px 14px 40px;
+  }
+  .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+  /* header */
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+  .sheet-head .title{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+  .daynav{display:flex;align-items:center;gap:6px}
+  .daynav button{
+    width:34px;height:34px;border:1px solid var(--rule);background:var(--card);border-radius:9px;
+    font-size:16px;color:var(--ink);cursor:pointer;line-height:1;
+  }
+  .daynav button:disabled{opacity:.3;cursor:default}
+  .daylabel{font-weight:600;font-size:15px;min-width:118px;text-align:center}
+
+  /* signature: measuring cylinders */
+  .gauge{
+    background:var(--card);border:1px solid var(--rule);border-radius:var(--r);
+    padding:16px 16px 14px;display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:end;
+  }
+  .tube-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .tube{
+    position:relative;width:100%;height:158px;border:1.5px solid var(--rule);border-top:none;
+    border-radius:4px 4px 12px 12px;overflow:hidden;background:#FBFDFE;
+  }
+  .tick{position:absolute;left:0;right:0;height:0;border-top:1px dashed var(--rule)}
+  .tick span{
+    position:absolute;right:4px;top:-13px;font-size:9px;color:var(--ink-soft);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .fill{
+    position:absolute;left:0;right:0;bottom:0;height:0;
+    transition:height .55s cubic-bezier(.25,1,.4,1);
+  }
+  .fill::after{content:"";position:absolute;left:-50%;right:-50%;top:-6px;height:12px;border-radius:50%;opacity:.85}
+  .fill.water{background:linear-gradient(180deg,var(--water) 0%,#0A6296 100%)}
+  .fill.water::after{background:#3FA3DA;animation:bob 3.4s ease-in-out infinite}
+  .fill.urine{background:linear-gradient(180deg,var(--urine) 0%,#A87508 100%)}
+  .fill.urine::after{background:#E5B23C;animation:bob 3.9s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateX(-4%)}50%{transform:translateX(4%)}}
+  @media (prefers-reduced-motion:reduce){.fill,.fill::after{transition:none;animation:none}}
+
+  .tube-cap{display:flex;flex-direction:column;align-items:center;gap:1px}
+  .tube-cap .n{font-size:22px;font-weight:600;line-height:1.1}
+  .tube-cap .u{font-size:10px;color:var(--ink-soft);letter-spacing:.1em;text-transform:uppercase}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
+  .lbl{font-size:13px;font-weight:600}
+
+  .balance{padding-bottom:24px;text-align:center;min-width:86px}
+  .balance .k{font-size:10px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase}
+  .balance .v{font-size:24px;font-weight:700;line-height:1.2;margin-top:2px}
+  .balance .h{font-size:11px;color:var(--ink-soft);line-height:1.35;margin-top:4px}
+
+  /* add buttons */
+  .add{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+  .add button{
+    border:none;border-radius:var(--r);padding:16px 10px;color:#fff;font-size:16px;font-weight:600;
+    font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;
+    box-shadow:0 2px 0 rgba(15,36,56,.18);
+  }
+  .add button:active{transform:translateY(1px);box-shadow:none}
+  .add .w{background:var(--water)}
+  .add .p{background:var(--urine)}
+
+  /* table */
+  .log{background:var(--card);border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
+  .log-head,.row{display:grid;grid-template-columns:44px 1fr 1fr 30px;gap:6px;align-items:center;padding:9px 12px}
+  .log-head{
+    font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);
+    border-bottom:1px solid var(--rule);font-weight:600;background:#F8FAFC;
+  }
+  .row{border-bottom:1px solid var(--rule);font-size:14px}
+  .row:last-child{border-bottom:none}
+  .cell-r{text-align:right}
+  .amt{font-weight:600}
+  .amt.w{color:var(--water)}
+  .amt.p{color:var(--urine)}
+  .run{display:block;font-size:10px;color:var(--ink-soft);font-weight:400}
+  .muted{color:#C3CFD9}
+  .del{
+    border:none;background:none;color:#C3CFD9;font-size:17px;cursor:pointer;padding:4px;line-height:1;
+  }
+  .del:active{color:var(--danger)}
+  .empty{padding:26px 16px;text-align:center;color:var(--ink-soft);font-size:14px;line-height:1.6}
+
+  .foot{display:flex;justify-content:space-between;gap:8px;margin-top:12px}
+  .ghost{
+    flex:1;border:1px solid var(--rule);background:var(--card);border-radius:10px;padding:11px;
+    font-family:inherit;font-size:13px;color:var(--ink);cursor:pointer;font-weight:500;
+  }
+  .ghost:active{background:#E7EEF3}
+
+  /* modal */
+  .scrim{
+    position:fixed;inset:0;background:rgba(15,36,56,.45);display:none;align-items:flex-end;justify-content:center;
+    z-index:9;
+  }
+  .scrim.on{display:flex}
+  .modal{
+    background:var(--card);width:100%;max-width:440px;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));
+    animation:up .22s ease-out;
+  }
+  @keyframes up{from{transform:translateY(16px);opacity:.6}to{transform:translateY(0);opacity:1}}
+  .modal h3{margin:0 0 14px;font-size:17px;display:flex;align-items:center;gap:8px}
+  .presets{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+  .presets button{
+    border:1.5px solid var(--rule);background:var(--card);border-radius:10px;padding:12px 4px;
+    font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;
+  }
+  .presets button.sel{border-color:currentColor;background:#F1F7FB}
+  .presets.w button.sel{color:var(--water);background:var(--water-lt)}
+  .presets.p button.sel{color:var(--urine);background:var(--urine-lt)}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:5px;font-weight:600}
+  .field input{
+    width:100%;border:1.5px solid var(--rule);border-radius:10px;padding:13px 12px;font-size:17px;
+    font-family:'IBM Plex Mono',monospace;color:var(--ink);background:#FBFDFE;
+  }
+  .field input:focus{outline:2px solid var(--water);outline-offset:1px;border-color:transparent}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .acts{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:16px}
+  .acts .cancel{border:1px solid var(--rule);background:var(--card);border-radius:11px;padding:14px;font-family:inherit;font-size:15px;cursor:pointer;color:var(--ink)}
+  .acts .save{border:none;border-radius:11px;padding:14px;font-family:inherit;font-size:15px;font-weight:600;color:#fff;cursor:pointer}
+  .save.w{background:var(--water)} .save.p{background:var(--urine)}
+
+  .toast{
+    position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(60px);
+    background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;
+    opacity:0;transition:.25s;z-index:20;font-family:'IBM Plex Sans Thai',sans-serif;pointer-events:none;
+  }
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="sheet-head">
+    <div class="title">น้ำเข้า · น้ำออก</div>
+    <div class="daynav">
+      <button id="prev" aria-label="วันก่อนหน้า">‹</button>
+      <div class="daylabel" id="daylabel">—</div>
+      <button id="next" aria-label="วันถัดไป">›</button>
+    </div>
+  </div>
+
+  <div class="gauge">
+    <div class="tube-wrap">
+      <div class="tube" id="tubeW"><div class="fill water" id="fillW"></div></div>
+      <div class="tube-cap">
+        <div class="lbl"><span class="dot" style="background:var(--water)"></span>ดื่มน้ำ</div>
+        <div class="n mono" id="sumW">0</div>
+        <div class="u">ml</div>
+      </div>
+    </div>
+
+    <div class="balance">
+      <div class="k">สมดุล</div>
+      <div class="v mono" id="bal">0</div>
+      <div class="h" id="balHint">ยังไม่มีข้อมูล</div>
+    </div>
+
+    <div class="tube-wrap">
+      <div class="tube" id="tubeP"><div class="fill urine" id="fillP"></div></div>
+      <div class="tube-cap">
+        <div class="lbl"><span class="dot" style="background:var(--urine)"></span>ฉี่</div>
+        <div class="n mono" id="sumP">0</div>
+        <div class="u">cc</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="add">
+    <button class="w" id="addW">＋ ดื่มน้ำ</button>
+    <button class="p" id="addP">＋ ฉี่</button>
+  </div>
+
+  <div class="log">
+    <div class="log-head">
+      <div>เวลา</div>
+      <div class="cell-r">ดื่ม (ml)</div>
+      <div class="cell-r">ฉี่ (cc)</div>
+      <div></div>
+    </div>
+    <div id="rows"></div>
+  </div>
+
+  <div class="foot">
+    <button class="ghost" id="copy">คัดลอกสรุปวันนี้</button>
+    <button class="ghost" id="reset">ล้างข้อมูลทั้งหมด</button>
+  </div>
+</div>
+
+<div class="scrim" id="scrim">
+  <div class="modal" id="modal"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const KEY='fluidlog:v1';
+  const TH_DAY=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  const TH_MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const PRESET_W=[150,250,350,500], PRESET_P=[100,200,300,400];
+
+  let entries=[];              // {id,date:'YYYY-MM-DD',time:'HH:MM',drink,pee}
+  let view=todayKey();
+  let mem=false;               // fallback ถ้าเซฟไม่ได้
+
+  const $=id=>document.getElementById(id);
+
+  function todayKey(d){d=d||new Date();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());}
+  function p2(n){return String(n).padStart(2,'0');}
+  function shift(key,n){const[y,m,d]=key.split('-').map(Number);const dt=new Date(y,m-1,d+n);return todayKey(dt);}
+  function labelOf(key){
+    const[y,m,d]=key.split('-').map(Number);const dt=new Date(y,m-1,d);
+    if(key===todayKey())return 'วันนี้';
+    if(key===shift(todayKey(),-1))return 'เมื่อวาน';
+    return TH_DAY[dt.getDay()].slice(0,2)+' '+d+' '+TH_MON[m-1];
+  }
+  function nowTime(){const d=new Date();return p2(d.getHours())+':'+p2(d.getMinutes());}
+
+  // เซฟได้ 2 ทาง: ในแอป Claude ใช้ window.storage / เปิดจากเบราว์เซอร์ใช้ localStorage
+  const hasCloud = typeof window.storage!=='undefined' && window.storage && window.storage.get;
+
+  async function load(){
+    try{
+      if(hasCloud){
+        const r=await window.storage.get(KEY);
+        entries=r&&r.value?JSON.parse(r.value):[];
+      }else{
+        entries=JSON.parse(localStorage.getItem(KEY)||'[]');
+      }
+    }catch(e){ entries=[]; }
+    render();
+  }
+  async function save(){
+    const data=JSON.stringify(entries);
+    try{
+      if(hasCloud) await window.storage.set(KEY,data);
+      else localStorage.setItem(KEY,data);
+    }catch(e){ if(!mem){mem=true;toast('เซฟถาวรไม่ได้ ข้อมูลจะอยู่แค่ในหน้านี้');} }
+  }
+
+  function toast(msg){
+    const t=$('toast'); t.textContent=msg; t.classList.add('on');
+    clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),2200);
+  }
+
+  function ofDay(key){
+    return entries.filter(e=>e.date===key).sort((a,b)=>a.time.localeCompare(b.time));
+  }
+
+  function render(){
+    const list=ofDay(view);
+    const sw=list.reduce((s,e)=>s+(e.drink||0),0);
+    const sp=list.reduce((s,e)=>s+(e.pee||0),0);
+
+    $('daylabel').textContent=labelOf(view);
+    $('next').disabled = view===todayKey();
+    $('sumW').textContent=sw.toLocaleString();
+    $('sumP').textContent=sp.toLocaleString();
+
+    const diff=sw-sp;
+    $('bal').textContent=(diff>0?'+':'')+diff.toLocaleString();
+    $('bal').style.color = list.length===0 ? 'var(--ink-soft)' : (diff>=0?'var(--water)':'var(--urine)');
+    $('balHint').textContent = list.length===0 ? 'ยังไม่มีข้อมูล'
+      : (diff>=0 ? 'ดื่มมากกว่าฉี่ '+diff.toLocaleString()+' ml' : 'ฉี่มากกว่าดื่ม '+Math.abs(diff).toLocaleString()+' cc');
+
+    // กระบอกตวง — สเกลร่วมกัน ปัดขึ้นทีละ 500 ขั้นต่ำ 2000
+    const scale=Math.max(2000,Math.ceil(Math.max(sw,sp)/500)*500);
+    $('fillW').style.height=Math.min(100,sw/scale*100)+'%';
+    $('fillP').style.height=Math.min(100,sp/scale*100)+'%';
+    drawTicks($('tubeW'),scale); drawTicks($('tubeP'),scale);
+
+    // ตาราง + ยอดสะสมทุกครั้งที่กรอก
+    const rows=$('rows');
+    if(!list.length){
+      rows.innerHTML='<div class="empty">ยังไม่มีบันทึกของวันนี้<br>กดปุ่มด้านบนเพื่อเริ่ม</div>';
+      return;
+    }
+    let rw=0,rp=0;
+    rows.innerHTML=list.map(e=>{
+      rw+=e.drink||0; rp+=e.pee||0;
+      const cw=e.drink?`<span class="amt w mono">${e.drink.toLocaleString()}</span><span class="run mono">รวม ${rw.toLocaleString()}</span>`:'<span class="muted mono">–</span>';
+      const cp=e.pee?`<span class="amt p mono">${e.pee.toLocaleString()}</span><span class="run mono">รวม ${rp.toLocaleString()}</span>`:'<span class="muted mono">–</span>';
+      return `<div class="row">
+        <div class="mono" style="font-size:13px">${e.time}</div>
+        <div class="cell-r">${cw}</div>
+        <div class="cell-r">${cp}</div>
+        <button class="del" data-del="${e.id}" aria-label="ลบ">×</button>
+      </div>`;
+    }).join('');
+  }
+
+  function drawTicks(tube,scale){
+    tube.querySelectorAll('.tick').forEach(t=>t.remove());
+    for(let i=1;i<=4;i++){
+      const v=scale*i/4;
+      const t=document.createElement('div');
+      t.className='tick';
+      t.style.bottom=(i*25)+'%';
+      t.innerHTML='<span>'+v.toLocaleString()+'</span>';
+      tube.appendChild(t);
+    }
+  }
+
+  // ---------- หน้าต่างเพิ่มรายการ ----------
+  let sel=null;
+  function open(kind){
+    const w = kind==='w';
+    const presets = w?PRESET_W:PRESET_P;
+    sel=null;
+    $('modal').innerHTML=`
+      <h3><span class="dot" style="background:var(--${w?'water':'urine'})"></span>${w?'ดื่มน้ำไปเท่าไหร่':'ฉี่ออกมาเท่าไหร่'}</h3>
+      <div class="presets ${w?'w':'p'}" id="presets">
+        ${presets.map(v=>`<button data-v="${v}">${v}</button>`).join('')}
+      </div>
+      <div class="field">
+        <label>จำนวน (${w?'ml':'cc'})</label>
+        <input id="amt" type="number" inputmode="numeric" min="1" placeholder="พิมพ์เอง เช่น 180">
+      </div>
+      <div class="two">
+        <div class="field"><label>วัน</label><input id="d" type="date" value="${view}"></div>
+        <div class="field"><label>เวลา</label><input id="t" type="time" value="${nowTime()}"></div>
+      </div>
+      <div class="acts">
+        <button class="cancel" id="cancel">ยกเลิก</button>
+        <button class="save ${w?'w':'p'}" id="ok">บันทึก</button>
+      </div>`;
+    $('scrim').classList.add('on');
+
+    $('presets').onclick=ev=>{
+      const b=ev.target.closest('button'); if(!b)return;
+      $('presets').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));
+      b.classList.add('sel'); sel=+b.dataset.v; $('amt').value=sel;
+    };
+    $('amt').oninput=()=>{$('presets').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));};
+    $('cancel').onclick=close;
+    $('ok').onclick=()=>{
+      const v=parseInt($('amt').value,10);
+      if(!v||v<=0){ $('amt').focus(); toast('ใส่จำนวนก่อนนะ'); return; }
+      entries.push({
+        id:Date.now()+''+Math.random().toString(16).slice(2,6),
+        date:$('d').value||view, time:$('t').value||nowTime(),
+        drink: w?v:0, pee: w?0:v
+      });
+      view=$('d').value||view;
+      save(); close(); render();
+      toast((w?'บันทึกน้ำดื่ม ':'บันทึกฉี่ ')+v+(w?' ml':' cc'));
+    };
+  }
+  function close(){ $('scrim').classList.remove('on'); }
+
+  // ---------- events ----------
+  $('addW').onclick=()=>open('w');
+  $('addP').onclick=()=>open('p');
+  $('prev').onclick=()=>{view=shift(view,-1);render();};
+  $('next').onclick=()=>{if(view!==todayKey()){view=shift(view,1);render();}};
+  $('scrim').onclick=e=>{if(e.target===$('scrim'))close();};
+  $('rows').onclick=e=>{
+    const b=e.target.closest('[data-del]'); if(!b)return;
+    entries=entries.filter(x=>x.id!==b.dataset.del);
+    save(); render(); toast('ลบแล้ว');
+  };
+  $('copy').onclick=async()=>{
+    const list=ofDay(view);
+    if(!list.length){toast('วันนี้ยังไม่มีข้อมูล');return;}
+    const sw=list.reduce((s,e)=>s+e.drink,0), sp=list.reduce((s,e)=>s+e.pee,0);
+    const txt='บันทึกน้ำเข้า-น้ำออก '+view+'\n'
+      +list.map(e=>`${e.time}  ดื่ม ${e.drink||'-'} ml  ฉี่ ${e.pee||'-'} cc`).join('\n')
+      +`\n\nรวมดื่ม ${sw} ml | รวมฉี่ ${sp} cc | สมดุล ${sw-sp>=0?'+':''}${sw-sp}`;
+    try{ await navigator.clipboard.writeText(txt); toast('คัดลอกแล้ว เอาไปส่งต่อได้เลย'); }
+    catch(e){ toast('คัดลอกไม่สำเร็จ'); }
+  };
+  $('reset').onclick=async()=>{
+    if(!confirm('ลบบันทึกทั้งหมดทุกวัน? กู้คืนไม่ได้นะ'))return;
+    entries=[];
+    try{ if(hasCloud) await window.storage.delete(KEY); else localStorage.removeItem(KEY); }catch(e){}
+    render(); toast('ล้างข้อมูลแล้ว');
+  };
+
+  load();
+})();
+
+// ใช้ออฟไลน์ได้ (ทำงานเมื่อเปิดผ่าน https หรือ localhost เท่านั้น)
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
