@@ -248,7 +248,7 @@
   </div>
 
   <div class="autosum" id="autoSumCard">
-    <div class="flbl">สรุปอัตโนมัติ (06:01 / 14:01)</div>
+    <div class="flbl">สรุปอัตโนมัติ (24 ชม. @06:00 · 8 ชม. @14:00)</div>
     <div id="autoSum">ยังไม่มีสรุปอัตโนมัติ</div>
   </div>
 
@@ -281,7 +281,9 @@
   const TH_MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const PRESET_W=[150,250,350,500], PRESET_P=[100,200,300,400];
   const STOOL_TYPES=['ปกติ','เหลว','ท้องเสีย'];
-  const BOUNDARIES=[[6,1],[14,1]]; // เวลาที่ตัดรอบสรุปอัตโนมัติ [ชม.,นาที]
+  // จุดปิดรอบสรุปแบบ รพ.: ปิดรอบที่ 06:00 มองย้อนหลัง 24 ชม. (=ของเมื่อวานเต็มวัน), ปิดรอบที่ 14:00 มองย้อนหลัง 8 ชม. (=06:00-14:00 วันนี้)
+  const CUT_POINTS=[{h:6,m:0,hours:24},{h:14,m:0,hours:8}];
+  const TRIGGER_DELAY_MS=60*1000; // เผื่อ 1 นาทีหลังถึงเวลาปิดรอบ ค่อยเช็ค/แสดงผล
 
   let entries=[];              // {id,date:'YYYY-MM-DD',time:'HH:MM',drink,pee,sec,stool,note}
   let view=todayKey();
@@ -347,11 +349,12 @@
     try{ if(hasCloud) await window.storage.set(AUTO_KEY,data); else localStorage.setItem(AUTO_KEY,data); }catch(e){}
   }
 
-  function boundaryDate(dateKey,hm){
+  function cutDate(dateKey,cp){
     const[y,m,d]=dateKey.split('-').map(Number);
-    return new Date(y,m-1,d,hm[0],hm[1],0,0);
+    return new Date(y,m-1,d,cp.h,cp.m,0,0);
   }
-  function boundariesBetween(fromTs,toTs){
+  // คืนจุดปิดรอบที่ "ถึงเวลาและพร้อมแสดงผลแล้ว" ในช่วง (fromTs, toTs]
+  function cutsReadyBetween(fromTs,toTs){
     const result=[];
     if(toTs<=fromTs) return result;
     let d=new Date(fromTs); d.setHours(0,0,0,0);
@@ -359,26 +362,23 @@
     let guard=0;
     while(d.getTime()<=endDate.getTime() && guard<60){
       const dk=todayKey(d);
-      BOUNDARIES.forEach(hm=>{
-        const bt=boundaryDate(dk,hm).getTime();
-        if(bt>fromTs && bt<=toTs) result.push(bt);
+      CUT_POINTS.forEach(cp=>{
+        const bt=cutDate(dk,cp).getTime();
+        if(bt>fromTs && (bt+TRIGGER_DELAY_MS)<=toTs) result.push({ts:bt,cp});
       });
       d.setDate(d.getDate()+1);
       guard++;
     }
-    result.sort((a,b)=>a-b);
+    result.sort((a,b)=>a.ts-b.ts);
     return result.slice(-14); // กันไล่ backlog ยาวเกินไปถ้าไม่ได้เปิดแอปนาน
   }
-  function mostRecentBoundaryAtOrBefore(ts){
-    const dk=todayKey(new Date(ts));
-    const yk=shift(dk,-1);
-    const cands=[...BOUNDARIES.map(hm=>boundaryDate(dk,hm).getTime()),...BOUNDARIES.map(hm=>boundaryDate(yk,hm).getTime())]
-      .filter(t=>t<=ts);
-    return cands.length?Math.max(...cands):ts;
-  }
-  function fmtBoundaryLabel(ts){
+  function fmtCutLabel(ts,cp){
+    if(cp.hours===24){
+      const prevDay=new Date(ts); prevDay.setDate(prevDay.getDate()-1);
+      return '24 ชม. ของวันที่ '+prevDay.getDate()+' '+TH_MON[prevDay.getMonth()]+' (06:00–06:00)';
+    }
     const dt=new Date(ts);
-    return dt.getDate()+' '+TH_MON[dt.getMonth()]+' '+p2(dt.getHours())+':'+p2(dt.getMinutes());
+    return '8 ชม. เช้าวันที่ '+dt.getDate()+' '+TH_MON[dt.getMonth()]+' (06:00–14:00)';
   }
   function windowSummary(fromTs,toTs){
     const inWin=entries.filter(e=>{const t=entryTs(e); return t>fromTs && t<=toTs;});
@@ -391,28 +391,28 @@
   async function runAutoSummary(){
     const now=Date.now();
     if(!autoState.lastBoundary){
-      autoState.lastBoundary=mostRecentBoundaryAtOrBefore(now);
+      // ครั้งแรก ไม่ backfill ย้อนหลัง เริ่มนับจากนี้ไป
+      autoState.lastBoundary=now;
       await saveAuto();
       return;
     }
-    const crossed=boundariesBetween(autoState.lastBoundary,now);
-    if(!crossed.length) return;
-    let prevTs=autoState.lastBoundary;
-    crossed.forEach(bt=>{
-      const sum=windowSummary(prevTs,bt);
-      autoState.summaries.unshift({ts:bt,label:fmtBoundaryLabel(bt),...sum});
-      prevTs=bt;
+    const ready=cutsReadyBetween(autoState.lastBoundary,now);
+    if(!ready.length) return;
+    ready.forEach(({ts,cp})=>{
+      const fromTs=ts-cp.hours*3600*1000;
+      const sum=windowSummary(fromTs,ts);
+      autoState.summaries.unshift({ts,label:fmtCutLabel(ts,cp),hours:cp.hours,...sum});
     });
     autoState.summaries=autoState.summaries.slice(0,20);
-    autoState.lastBoundary=prevTs;
+    autoState.lastBoundary=ready[ready.length-1].ts;
     await saveAuto();
     renderAutoSummaries();
-    toast('สรุปอัตโนมัติรอบ '+fmtBoundaryLabel(crossed[crossed.length-1])+' พร้อมแล้ว');
+    toast('มีสรุปอัตโนมัติใหม่ '+ready.length+' รอบ');
   }
   function renderAutoSummaries(){
     const box=$('autoSum');
     if(!autoState.summaries.length){
-      box.textContent='ยังไม่มีสรุปอัตโนมัติ (จะสรุปให้เมื่อถึงรอบ 06:01 หรือ 14:01 ถัดไป)';
+      box.textContent='ยังไม่มีสรุปอัตโนมัติ (จะสรุปให้เมื่อถึงรอบ 06:00 หรือ 14:00 ถัดไป)';
       return;
     }
     box.innerHTML=autoState.summaries.slice(0,8).map(s=>{
@@ -420,7 +420,7 @@
         ? Object.entries(s.stoolCounts).map(([k,v])=>escapeHtml(k)+' '+v).join(', ')
         : 'ไม่มี';
       return `<div class="asum-row">
-        <div class="asum-t">รอบ ${s.label}</div>
+        <div class="asum-t">${s.label}</div>
         <div class="asum-v">ดื่ม ${s.sw.toLocaleString()} ml · ฉี่ ${s.sp.toLocaleString()} cc · ขับถ่าย ${stoolTxt}</div>
       </div>`;
     }).join('');
