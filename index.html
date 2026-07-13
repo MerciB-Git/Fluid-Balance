@@ -27,6 +27,8 @@
     --water-lt:#CFE8F7;
     --urine:#CE9412;
     --urine-lt:#F7E9BF;
+    --stool:#8B5A2B;
+    --stool-lt:#EAE0D5;
     --danger:#B23A2E;
     --r:14px;
   }
@@ -92,15 +94,16 @@
   .balance .h{font-size:11px;color:var(--ink-soft);line-height:1.35;margin-top:4px}
 
   /* add buttons */
-  .add{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+  .add{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
   .add button{
-    border:none;border-radius:var(--r);padding:16px 10px;color:#fff;font-size:16px;font-weight:600;
-    font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;
+    border:none;border-radius:var(--r);padding:14px 4px;color:#fff;font-size:14px;font-weight:600;
+    font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;
     box-shadow:0 2px 0 rgba(15,36,56,.18);
   }
   .add button:active{transform:translateY(1px);box-shadow:none}
   .add .w{background:var(--water)}
   .add .p{background:var(--urine)}
+  .add .b{background:var(--stool)}
 
   /* อัตราการไหลเฉลี่ย */
   .flow{
@@ -115,19 +118,30 @@
   .flow .frow .fcnt{color:var(--ink-soft);font-weight:400;margin-left:4px}
   .flow .frow .favg{font-weight:700;color:var(--urine)}
 
+  /* สรุปอัตโนมัติ */
+  .autosum{
+    background:var(--card);border:1px solid var(--rule);border-radius:var(--r);
+    padding:12px 16px;margin-bottom:12px;
+  }
+  .asum-row{padding:6px 0;font-size:13px}
+  .asum-row:not(:last-child){border-bottom:1px dashed var(--rule)}
+  .asum-t{font-weight:600;font-size:12px;color:var(--ink-soft);margin-bottom:2px}
+  .asum-v{font-size:13px}
+
   /* table */
   .log{background:var(--card);border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
-  .log-head,.row{display:grid;grid-template-columns:44px 1fr 1fr 30px;gap:6px;align-items:center;padding:9px 12px}
+  .log-head,.row{display:grid;grid-template-columns:38px 1fr 1fr 1fr 24px;gap:4px;align-items:center;padding:9px 10px}
   .log-head{
-    font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);
+    font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);
     border-bottom:1px solid var(--rule);font-weight:600;background:#F8FAFC;
   }
-  .row{border-bottom:1px solid var(--rule);font-size:14px}
+  .row{border-bottom:1px solid var(--rule);font-size:13px}
   .row:last-child{border-bottom:none}
   .cell-r{text-align:right}
   .amt{font-weight:600}
   .amt.w{color:var(--water)}
   .amt.p{color:var(--urine)}
+  .amt.b{color:var(--stool)}
   .run{display:block;font-size:10px;color:var(--ink-soft);font-weight:400}
   .muted{color:#C3CFD9}
   .del{
@@ -163,6 +177,7 @@
   .presets button.sel{border-color:currentColor;background:#F1F7FB}
   .presets.w button.sel{color:var(--water);background:var(--water-lt)}
   .presets.p button.sel{color:var(--urine);background:var(--urine-lt)}
+  .presets.b button.sel{color:var(--stool);background:var(--stool-lt)}
   .field{margin-bottom:12px}
   .field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:5px;font-weight:600}
   .field input{
@@ -174,7 +189,7 @@
   .acts{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:16px}
   .acts .cancel{border:1px solid var(--rule);background:var(--card);border-radius:11px;padding:14px;font-family:inherit;font-size:15px;cursor:pointer;color:var(--ink)}
   .acts .save{border:none;border-radius:11px;padding:14px;font-family:inherit;font-size:15px;font-weight:600;color:#fff;cursor:pointer}
-  .save.w{background:var(--water)} .save.p{background:var(--urine)}
+  .save.w{background:var(--water)} .save.p{background:var(--urine)} .save.b{background:var(--stool)}
 
   .toast{
     position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(60px);
@@ -224,6 +239,7 @@
   <div class="add">
     <button class="w" id="addW">＋ ดื่มน้ำ</button>
     <button class="p" id="addP">＋ ฉี่</button>
+    <button class="b" id="addB">＋ ขับถ่าย</button>
   </div>
 
   <div class="flow" id="flowCard">
@@ -231,11 +247,17 @@
     <div class="fval mono" id="flowVal">ยังไม่มีข้อมูล</div>
   </div>
 
+  <div class="autosum" id="autoSumCard">
+    <div class="flbl">สรุปอัตโนมัติ (06:01 / 14:01)</div>
+    <div id="autoSum">ยังไม่มีสรุปอัตโนมัติ</div>
+  </div>
+
   <div class="log">
     <div class="log-head">
       <div>เวลา</div>
       <div class="cell-r">ดื่ม (ml)</div>
       <div class="cell-r">ฉี่ (cc)</div>
+      <div class="cell-r">ขับถ่าย</div>
       <div></div>
     </div>
     <div id="rows"></div>
@@ -258,10 +280,13 @@
   const TH_DAY=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
   const TH_MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const PRESET_W=[150,250,350,500], PRESET_P=[100,200,300,400];
+  const STOOL_TYPES=['ปกติ','เหลว','ท้องเสีย'];
+  const BOUNDARIES=[[6,1],[14,1]]; // เวลาที่ตัดรอบสรุปอัตโนมัติ [ชม.,นาที]
 
-  let entries=[];              // {id,date:'YYYY-MM-DD',time:'HH:MM',drink,pee,sec}
+  let entries=[];              // {id,date:'YYYY-MM-DD',time:'HH:MM',drink,pee,sec,stool,note}
   let view=todayKey();
   let mem=false;               // fallback ถ้าเซฟไม่ได้
+  let autoState={lastBoundary:0, summaries:[]};
 
   const $=id=>document.getElementById(id);
 
@@ -276,6 +301,12 @@
   }
   function nowTime(){const d=new Date();return p2(d.getHours())+':'+p2(d.getMinutes());}
   function fmtNum(n){return n.toLocaleString(undefined,{maximumFractionDigits:1});}
+  function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function entryTs(e){
+    const[y,m,d]=e.date.split('-').map(Number);
+    const[hh,mm]=e.time.split(':').map(Number);
+    return new Date(y,m-1,d,hh,mm,0,0).getTime();
+  }
 
   // เซฟได้ 2 ทาง: ในแอป Claude ใช้ window.storage / เปิดจากเบราว์เซอร์ใช้ localStorage
   const hasCloud = typeof window.storage!=='undefined' && window.storage && window.storage.get;
@@ -297,6 +328,102 @@
       if(hasCloud) await window.storage.set(KEY,data);
       else localStorage.setItem(KEY,data);
     }catch(e){ if(!mem){mem=true;toast('เซฟถาวรไม่ได้ ข้อมูลจะอยู่แค่ในหน้านี้');} }
+  }
+
+  const AUTO_KEY='fluidlog:autosum:v1';
+  async function loadAuto(){
+    try{
+      if(hasCloud){
+        const r=await window.storage.get(AUTO_KEY);
+        if(r&&r.value) autoState=JSON.parse(r.value);
+      }else{
+        const raw=localStorage.getItem(AUTO_KEY);
+        if(raw) autoState=JSON.parse(raw);
+      }
+    }catch(e){}
+  }
+  async function saveAuto(){
+    const data=JSON.stringify(autoState);
+    try{ if(hasCloud) await window.storage.set(AUTO_KEY,data); else localStorage.setItem(AUTO_KEY,data); }catch(e){}
+  }
+
+  function boundaryDate(dateKey,hm){
+    const[y,m,d]=dateKey.split('-').map(Number);
+    return new Date(y,m-1,d,hm[0],hm[1],0,0);
+  }
+  function boundariesBetween(fromTs,toTs){
+    const result=[];
+    if(toTs<=fromTs) return result;
+    let d=new Date(fromTs); d.setHours(0,0,0,0);
+    const endDate=new Date(toTs); endDate.setHours(0,0,0,0);
+    let guard=0;
+    while(d.getTime()<=endDate.getTime() && guard<60){
+      const dk=todayKey(d);
+      BOUNDARIES.forEach(hm=>{
+        const bt=boundaryDate(dk,hm).getTime();
+        if(bt>fromTs && bt<=toTs) result.push(bt);
+      });
+      d.setDate(d.getDate()+1);
+      guard++;
+    }
+    result.sort((a,b)=>a-b);
+    return result.slice(-14); // กันไล่ backlog ยาวเกินไปถ้าไม่ได้เปิดแอปนาน
+  }
+  function mostRecentBoundaryAtOrBefore(ts){
+    const dk=todayKey(new Date(ts));
+    const yk=shift(dk,-1);
+    const cands=[...BOUNDARIES.map(hm=>boundaryDate(dk,hm).getTime()),...BOUNDARIES.map(hm=>boundaryDate(yk,hm).getTime())]
+      .filter(t=>t<=ts);
+    return cands.length?Math.max(...cands):ts;
+  }
+  function fmtBoundaryLabel(ts){
+    const dt=new Date(ts);
+    return dt.getDate()+' '+TH_MON[dt.getMonth()]+' '+p2(dt.getHours())+':'+p2(dt.getMinutes());
+  }
+  function windowSummary(fromTs,toTs){
+    const inWin=entries.filter(e=>{const t=entryTs(e); return t>fromTs && t<=toTs;});
+    const sw=inWin.reduce((s,e)=>s+(e.drink||0),0);
+    const sp=inWin.reduce((s,e)=>s+(e.pee||0),0);
+    const stoolCounts={};
+    inWin.forEach(e=>{ if(e.stool) stoolCounts[e.stool]=(stoolCounts[e.stool]||0)+1; });
+    return {sw,sp,stoolCounts};
+  }
+  async function runAutoSummary(){
+    const now=Date.now();
+    if(!autoState.lastBoundary){
+      autoState.lastBoundary=mostRecentBoundaryAtOrBefore(now);
+      await saveAuto();
+      return;
+    }
+    const crossed=boundariesBetween(autoState.lastBoundary,now);
+    if(!crossed.length) return;
+    let prevTs=autoState.lastBoundary;
+    crossed.forEach(bt=>{
+      const sum=windowSummary(prevTs,bt);
+      autoState.summaries.unshift({ts:bt,label:fmtBoundaryLabel(bt),...sum});
+      prevTs=bt;
+    });
+    autoState.summaries=autoState.summaries.slice(0,20);
+    autoState.lastBoundary=prevTs;
+    await saveAuto();
+    renderAutoSummaries();
+    toast('สรุปอัตโนมัติรอบ '+fmtBoundaryLabel(crossed[crossed.length-1])+' พร้อมแล้ว');
+  }
+  function renderAutoSummaries(){
+    const box=$('autoSum');
+    if(!autoState.summaries.length){
+      box.textContent='ยังไม่มีสรุปอัตโนมัติ (จะสรุปให้เมื่อถึงรอบ 06:01 หรือ 14:01 ถัดไป)';
+      return;
+    }
+    box.innerHTML=autoState.summaries.slice(0,8).map(s=>{
+      const stoolTxt=Object.keys(s.stoolCounts).length
+        ? Object.entries(s.stoolCounts).map(([k,v])=>escapeHtml(k)+' '+v).join(', ')
+        : 'ไม่มี';
+      return `<div class="asum-row">
+        <div class="asum-t">รอบ ${s.label}</div>
+        <div class="asum-v">ดื่ม ${s.sw.toLocaleString()} ml · ฉี่ ${s.sp.toLocaleString()} cc · ขับถ่าย ${stoolTxt}</div>
+      </div>`;
+    }).join('');
   }
 
   function toast(msg){
@@ -355,12 +482,15 @@
     let rw=0,rp=0;
     rows.innerHTML=list.map(e=>{
       rw+=e.drink||0; rp+=e.pee||0;
-      const cw=e.drink?`<span class="amt w mono">${e.drink.toLocaleString()}</span><span class="run mono">รวม ${rw.toLocaleString()}</span>`:'<span class="muted mono">–</span>';
+      const noteTxt = e.note ? ' · '+escapeHtml(e.note) : '';
+      const cw=e.drink?`<span class="amt w mono">${e.drink.toLocaleString()}</span><span class="run mono">รวม ${rw.toLocaleString()}${noteTxt}</span>`:'<span class="muted mono">–</span>';
       const cp=e.pee?`<span class="amt p mono">${e.pee.toLocaleString()}</span><span class="run mono">${e.sec?e.sec+' วิ · ':''}รวม ${rp.toLocaleString()}</span>`:'<span class="muted mono">–</span>';
+      const cb=e.stool?`<span class="amt b mono">${escapeHtml(e.stool)}</span>`:'<span class="muted mono">–</span>';
       return `<div class="row">
         <div class="mono" style="font-size:13px">${e.time}</div>
         <div class="cell-r">${cw}</div>
         <div class="cell-r">${cp}</div>
+        <div class="cell-r">${cb}</div>
         <button class="del" data-del="${e.id}" aria-label="ลบ">×</button>
       </div>`;
     }).join('');
@@ -381,41 +511,78 @@
   // ---------- หน้าต่างเพิ่มรายการ ----------
   let sel=null;
   function open(kind){
-    const w = kind==='w';
-    const presets = w?PRESET_W:PRESET_P;
     sel=null;
-    $('modal').innerHTML=`
-      <h3><span class="dot" style="background:var(--${w?'water':'urine'})"></span>${w?'ดื่มน้ำไปเท่าไหร่':'ฉี่ออกมาเท่าไหร่'}</h3>
-      <div class="presets ${w?'w':'p'}" id="presets">
-        ${presets.map(v=>`<button data-v="${v}">${v}</button>`).join('')}
-      </div>
-      <div class="field">
-        <label>จำนวน (${w?'ml':'cc'})</label>
-        <input id="amt" type="number" inputmode="numeric" min="1" placeholder="พิมพ์เอง เช่น 180">
-      </div>
-      ${w?'':`
-      <div class="field">
-        <label>ระยะเวลา (วินาที)</label>
-        <input id="sec" type="number" inputmode="numeric" min="1" placeholder="เช่น 35">
-      </div>`}
-      <div class="two">
-        <div class="field"><label>วัน</label><input id="d" type="date" value="${view}"></div>
-        <div class="field"><label>เวลา</label><input id="t" type="time" value="${nowTime()}"></div>
-      </div>
-      <div class="acts">
-        <button class="cancel" id="cancel">ยกเลิก</button>
-        <button class="save ${w?'w':'p'}" id="ok">บันทึก</button>
-      </div>`;
+    if(kind==='b'){
+      $('modal').innerHTML=`
+        <h3><span class="dot" style="background:var(--stool)"></span>ขับถ่ายแบบไหน</h3>
+        <div class="presets b" id="presets">
+          ${STOOL_TYPES.map(v=>`<button data-v="${v}">${v}</button>`).join('')}
+        </div>
+        <div class="two">
+          <div class="field"><label>วัน</label><input id="d" type="date" value="${view}"></div>
+          <div class="field"><label>เวลา</label><input id="t" type="time" value="${nowTime()}"></div>
+        </div>
+        <div class="acts">
+          <button class="cancel" id="cancel">ยกเลิก</button>
+          <button class="save b" id="ok">บันทึก</button>
+        </div>`;
+    }else{
+      const w = kind==='w';
+      const presets = w?PRESET_W:PRESET_P;
+      $('modal').innerHTML=`
+        <h3><span class="dot" style="background:var(--${w?'water':'urine'})"></span>${w?'ดื่มน้ำไปเท่าไหร่':'ฉี่ออกมาเท่าไหร่'}</h3>
+        <div class="presets ${w?'w':'p'}" id="presets">
+          ${presets.map(v=>`<button data-v="${v}">${v}</button>`).join('')}
+        </div>
+        <div class="field">
+          <label>จำนวน (${w?'ml':'cc'})</label>
+          <input id="amt" type="number" inputmode="numeric" min="1" placeholder="พิมพ์เอง เช่น 180">
+        </div>
+        ${w?`
+        <div class="field">
+          <label>โน้ต (ไม่บังคับ)</label>
+          <input id="note" type="text" maxlength="60" placeholder="เช่น น้ำผลไม้, นม, กาแฟ">
+        </div>`:`
+        <div class="field">
+          <label>ระยะเวลา (วินาที)</label>
+          <input id="sec" type="number" inputmode="numeric" min="1" placeholder="เช่น 35">
+        </div>`}
+        <div class="two">
+          <div class="field"><label>วัน</label><input id="d" type="date" value="${view}"></div>
+          <div class="field"><label>เวลา</label><input id="t" type="time" value="${nowTime()}"></div>
+        </div>
+        <div class="acts">
+          <button class="cancel" id="cancel">ยกเลิก</button>
+          <button class="save ${w?'w':'p'}" id="ok">บันทึก</button>
+        </div>`;
+    }
     $('scrim').classList.add('on');
 
     $('presets').onclick=ev=>{
       const b=ev.target.closest('button'); if(!b)return;
       $('presets').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));
-      b.classList.add('sel'); sel=+b.dataset.v; $('amt').value=sel;
+      b.classList.add('sel');
+      if(kind==='b'){ sel=b.dataset.v; }
+      else{ sel=+b.dataset.v; $('amt').value=sel; }
     };
-    $('amt').oninput=()=>{$('presets').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));};
+    if(kind!=='b'){
+      $('amt').oninput=()=>{$('presets').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));};
+    }
     $('cancel').onclick=close;
     $('ok').onclick=()=>{
+      if(kind==='b'){
+        if(!sel){ toast('เลือกลักษณะก่อนนะ'); return; }
+        entries.push({
+          id:Date.now()+''+Math.random().toString(16).slice(2,6),
+          date:$('d').value||view, time:$('t').value||nowTime(),
+          drink:0, pee:0, sec:0, stool:sel, note:''
+        });
+        view=$('d').value||view;
+        save(); close(); render();
+        toast('บันทึกขับถ่าย '+sel);
+        return;
+      }
+      const w = kind==='w';
       const v=parseInt($('amt').value,10);
       if(!v||v<=0){ $('amt').focus(); toast('ใส่จำนวนก่อนนะ'); return; }
       let sec=0;
@@ -423,10 +590,11 @@
         sec=parseInt($('sec').value,10);
         if(!sec||sec<=0){ $('sec').focus(); toast('ใส่ระยะเวลาก่อนนะ'); return; }
       }
+      const note = w ? ($('note').value||'').trim().slice(0,60) : '';
       entries.push({
         id:Date.now()+''+Math.random().toString(16).slice(2,6),
         date:$('d').value||view, time:$('t').value||nowTime(),
-        drink: w?v:0, pee: w?0:v, sec: w?0:sec
+        drink: w?v:0, pee: w?0:v, sec: w?0:sec, stool:'', note
       });
       view=$('d').value||view;
       save(); close(); render();
@@ -438,6 +606,7 @@
   // ---------- events ----------
   $('addW').onclick=()=>open('w');
   $('addP').onclick=()=>open('p');
+  $('addB').onclick=()=>open('b');
   $('prev').onclick=()=>{view=shift(view,-1);render();};
   $('next').onclick=()=>{if(view!==todayKey()){view=shift(view,1);render();}};
   $('scrim').onclick=e=>{if(e.target===$('scrim'))close();};
@@ -451,7 +620,13 @@
     if(!list.length){toast('วันนี้ยังไม่มีข้อมูล');return;}
     const sw=list.reduce((s,e)=>s+e.drink,0), sp=list.reduce((s,e)=>s+e.pee,0);
     const txt='บันทึกน้ำเข้า-น้ำออก '+view+'\n'
-      +list.map(e=>`${e.time}  ดื่ม ${e.drink||'-'} ml  ฉี่ ${e.pee||'-'} cc${e.pee&&e.sec?' ('+e.sec+' วิ)':''}`).join('\n')
+      +list.map(e=>{
+        const parts=[e.time];
+        parts.push('ดื่ม '+(e.drink||'-')+' ml'+(e.note?' ('+e.note+')':''));
+        parts.push('ฉี่ '+(e.pee||'-')+' cc'+(e.pee&&e.sec?' ('+e.sec+' วิ)':''));
+        if(e.stool) parts.push('ขับถ่าย '+e.stool);
+        return parts.join('  ');
+      }).join('\n')
       +`\n\nรวมดื่ม ${sw} ml | รวมฉี่ ${sp} cc | สมดุล ${sw-sp>=0?'+':''}${sw-sp}`;
     try{ await navigator.clipboard.writeText(txt); toast('คัดลอกแล้ว เอาไปส่งต่อได้เลย'); }
     catch(e){ toast('คัดลอกไม่สำเร็จ'); }
@@ -463,7 +638,13 @@
     render(); toast('ล้างข้อมูลแล้ว');
   };
 
-  load();
+  (async function init(){
+    await load();
+    await loadAuto();
+    renderAutoSummaries();
+    await runAutoSummary();
+    setInterval(runAutoSummary, 5*60*1000);
+  })();
 })();
 
 // ใช้ออฟไลน์ได้ (ทำงานเมื่อเปิดผ่าน https หรือ localhost เท่านั้น)
