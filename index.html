@@ -156,6 +156,7 @@
     font-family:inherit;font-size:13px;color:var(--ink);cursor:pointer;font-weight:500;
   }
   .ghost:active{background:#E7EEF3}
+  .ghost:disabled{opacity:.35;cursor:default;background:var(--card)}
 
   /* modal */
   .scrim{
@@ -264,6 +265,7 @@
   </div>
 
   <div class="foot">
+    <button class="ghost" id="undo" disabled>↺ ย้อนกลับ</button>
     <button class="ghost" id="copy">คัดลอกสรุปวันนี้</button>
     <button class="ghost" id="reset">ล้างข้อมูลทั้งหมด</button>
   </div>
@@ -289,6 +291,7 @@
   let view=todayKey();
   let mem=false;               // fallback ถ้าเซฟไม่ได้
   let autoState={lastBoundary:0, summaries:[]};
+  let undoBuffer=null;         // สำเนา entries ก่อนการลบครั้งล่าสุด (ย้อนกลับได้ 1 ขั้น)
 
   const $=id=>document.getElementById(id);
 
@@ -430,6 +433,13 @@
     const t=$('toast'); t.textContent=msg; t.classList.add('on');
     clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),2200);
   }
+
+  // ---------- ย้อนกลับ (undo ชั้นเดียว ก่อนลบ/ล้างข้อมูลครั้งล่าสุด) ----------
+  function snapshotForUndo(){
+    undoBuffer=JSON.parse(JSON.stringify(entries));
+    updateUndoBtn();
+  }
+  function updateUndoBtn(){ $('undo').disabled=!undoBuffer; }
 
   function ofDay(key){
     return entries.filter(e=>e.date===key).sort((a,b)=>a.time.localeCompare(b.time));
@@ -612,8 +622,18 @@
   $('scrim').onclick=e=>{if(e.target===$('scrim'))close();};
   $('rows').onclick=e=>{
     const b=e.target.closest('[data-del]'); if(!b)return;
+    snapshotForUndo();
     entries=entries.filter(x=>x.id!==b.dataset.del);
-    save(); render(); toast('ลบแล้ว');
+    save(); render(); toast('ลบแล้ว (กดย้อนกลับได้ถ้าพลาด)');
+  };
+  $('undo').onclick=async()=>{
+    if(!undoBuffer) return;
+    entries=undoBuffer;
+    undoBuffer=null;
+    updateUndoBtn();
+    await save();
+    render();
+    toast('กู้คืนข้อมูลแล้ว');
   };
   $('copy').onclick=async()=>{
     const list=ofDay(view);
@@ -632,10 +652,11 @@
     catch(e){ toast('คัดลอกไม่สำเร็จ'); }
   };
   $('reset').onclick=async()=>{
-    if(!confirm('ลบบันทึกทั้งหมดทุกวัน? กู้คืนไม่ได้นะ'))return;
+    if(!confirm('ลบบันทึกทั้งหมดทุกวัน? (กดปุ่ม "ย้อนกลับ" ได้ถ้าพลาด)'))return;
+    snapshotForUndo();
     entries=[];
     try{ if(hasCloud) await window.storage.delete(KEY); else localStorage.removeItem(KEY); }catch(e){}
-    render(); toast('ล้างข้อมูลแล้ว');
+    render(); toast('ล้างข้อมูลแล้ว (กดย้อนกลับได้ถ้าพลาด)');
   };
 
   (async function init(){
