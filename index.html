@@ -288,6 +288,11 @@
     <button class="ghost" id="copy">คัดลอกสรุปวันนี้</button>
     <button class="ghost" id="reset">ล้างข้อมูลทั้งหมด</button>
   </div>
+  <div class="foot">
+    <button class="ghost" id="exportBtn">⬇ ส่งออก JSON</button>
+    <button class="ghost" id="importBtn">⬆ นำเข้า JSON</button>
+  </div>
+  <input type="file" id="importFile" accept="application/json,.json" style="display:none">
 </div>
 
 <div class="scrim" id="scrim">
@@ -619,6 +624,35 @@
     entries=[];
     try{ if(hasCloud) await window.storage.delete(KEY); else localStorage.removeItem(KEY); }catch(e){}
     render(); toast('ล้างข้อมูลแล้ว (กดย้อนกลับได้ถ้าพลาด)');
+  };
+
+  $('exportBtn').onclick=()=>{
+    if(!entries.length){ toast('ยังไม่มีข้อมูลให้ส่งออก'); return; }
+    const blob=new Blob([JSON.stringify(entries,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='fluidlog-backup-'+todayKey()+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('ส่งออกไฟล์แล้ว ('+entries.length+' รายการ)');
+  };
+  $('importBtn').onclick=()=>{ $('importFile').value=''; $('importFile').click(); };
+  $('importFile').onchange=(e)=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=async()=>{
+      let data;
+      try{ data=JSON.parse(reader.result); }
+      catch(err){ toast('ไฟล์ไม่ถูกต้อง อ่านไม่ได้'); return; }
+      if(!Array.isArray(data)){ toast('รูปแบบไฟล์ไม่ถูกต้อง'); return; }
+      if(!confirm('นำเข้าไฟล์นี้ ('+data.length+' รายการ) จะแทนที่ข้อมูลทั้งหมดในเครื่อง ต้องการดำเนินการต่อไหม? (กดย้อนกลับได้ถ้าพลาด)')) return;
+      snapshotForUndo();
+      entries=data;
+      await save();
+      render();
+      toast('นำเข้าข้อมูลแล้ว ('+data.length+' รายการ)');
+    };
+    reader.readAsText(file);
   };
 
   load();
