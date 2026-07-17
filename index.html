@@ -5,10 +5,10 @@
 <title>น้ำเข้า-น้ำออก</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#EDF2F6">
+<meta name="theme-color" content="#14151F">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="น้ำเข้า-ออก">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
@@ -18,28 +18,29 @@
 
 <style>
   :root{
-    --ink:#0F2438;
-    --ink-soft:#5E7387;
-    --paper:#EDF2F6;
-    --card:#FFFFFF;
-    --rule:#D8E2EA;
-    --water:#0E7FBF;
-    --water-lt:#CFE8F7;
-    --urine:#CE9412;
-    --urine-lt:#F7E9BF;
-    --stool:#8B5A2B;
-    --stool-lt:#EAE0D5;
-    --danger:#B23A2E;
-    --r:14px;
+    --ink:#F2F4F8;
+    --ink-soft:#8A90A6;
+    --paper:#14151F;
+    --card:#1E2030;
+    --card-2:#262A3D;
+    --rule:#2E3247;
+    --water:#3EA6FF;
+    --water-lt:rgba(62,166,255,.16);
+    --urine:#FFB020;
+    --urine-lt:rgba(255,176,32,.16);
+    --stool:#C08552;
+    --stool-lt:rgba(192,133,82,.16);
+    --danger:#FF5C5C;
+    --ok:#34D399;
+    --r:16px;
+    --rpill:999px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{margin:0}
+  body{margin:0;background:var(--paper)}
   #app{
     font-family:'IBM Plex Sans Thai',system-ui,-apple-system,'Sarabun',sans-serif;
     color:var(--ink);
     background:var(--paper);
-    background-image:linear-gradient(var(--rule) 1px,transparent 1px);
-    background-size:100% 28px;
     max-width:440px;margin:0 auto;padding:14px 14px 40px;
   }
   .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
@@ -49,7 +50,7 @@
   .sheet-head .title{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
   .daynav{display:flex;align-items:center;gap:6px}
   .daynav button{
-    width:34px;height:34px;border:1px solid var(--rule);background:var(--card);border-radius:9px;
+    width:34px;height:34px;border:1px solid var(--rule);background:var(--card);border-radius:12px;
     font-size:16px;color:var(--ink);cursor:pointer;line-height:1;
   }
   .daynav button:disabled{opacity:.3;cursor:default}
@@ -63,7 +64,7 @@
   .tube-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
   .tube{
     position:relative;width:100%;height:158px;border:1.5px solid var(--rule);border-top:none;
-    border-radius:4px 4px 12px 12px;overflow:hidden;background:#FBFDFE;
+    border-radius:4px 4px 12px 12px;overflow:hidden;background:var(--paper);
   }
   .tick{position:absolute;left:0;right:0;height:0;border-top:1px dashed var(--rule)}
   .tick span{
@@ -75,10 +76,10 @@
     transition:height .55s cubic-bezier(.25,1,.4,1);
   }
   .fill::after{content:"";position:absolute;left:-50%;right:-50%;top:-6px;height:12px;border-radius:50%;opacity:.85}
-  .fill.water{background:linear-gradient(180deg,var(--water) 0%,#0A6296 100%)}
-  .fill.water::after{background:#3FA3DA;animation:bob 3.4s ease-in-out infinite}
-  .fill.urine{background:linear-gradient(180deg,var(--urine) 0%,#A87508 100%)}
-  .fill.urine::after{background:#E5B23C;animation:bob 3.9s ease-in-out infinite}
+  .fill.water{background:linear-gradient(180deg,var(--water) 0%,#1665A6 100%)}
+  .fill.water::after{background:#6FC4FF;animation:bob 3.4s ease-in-out infinite}
+  .fill.urine{background:linear-gradient(180deg,var(--urine) 0%,#C97F0A 100%)}
+  .fill.urine::after{background:#FFCB66;animation:bob 3.9s ease-in-out infinite}
   @keyframes bob{0%,100%{transform:translateX(-4%)}50%{transform:translateX(4%)}}
   @media (prefers-reduced-motion:reduce){.fill,.fill::after{transition:none;animation:none}}
 
@@ -96,11 +97,10 @@
   /* add buttons */
   .add{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
   .add button{
-    border:none;border-radius:var(--r);padding:14px 4px;color:#fff;font-size:14px;font-weight:600;
+    border:none;border-radius:var(--rpill);padding:14px 4px;color:#fff;font-size:14px;font-weight:700;
     font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;
-    box-shadow:0 2px 0 rgba(15,36,56,.18);
   }
-  .add button:active{transform:translateY(1px);box-shadow:none}
+  .add button:active{transform:translateY(1px);opacity:.85}
   .add .w{background:var(--water)}
   .add .p{background:var(--urine)}
   .add .b{background:var(--stool)}
@@ -112,28 +112,41 @@
   }
   .flow .flbl{font-size:11px;letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase;font-weight:600;margin-bottom:4px}
   .flow .fval{font-size:14px;color:var(--ink-soft)}
-  .flow .frow{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:14px}
-  .flow .frow:not(:last-child){border-bottom:1px dashed var(--rule)}
-  .flow .frow .famt{font-weight:700;color:var(--ink)}
-  .flow .frow .fcnt{color:var(--ink-soft);font-weight:400;margin-left:4px}
-  .flow .frow .favg{font-weight:700;color:var(--urine)}
 
-  /* สรุปอัตโนมัติ */
-  .autosum{
-    background:var(--card);border:1px solid var(--rule);border-radius:var(--r);
+  /* กราฟแท่งแนวนอน: ปริมาณฉี่ (Y) × ระยะเวลาเฉลี่ยวินาที (X) */
+  .bchart-row{display:grid;grid-template-columns:64px 1fr 50px;align-items:center;gap:8px;padding:5px 0}
+  .bchart-label{font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;line-height:1.25}
+  .bchart-label b{color:var(--ink);font-weight:700}
+  .bchart-cnt{margin-left:3px;opacity:.7}
+  .bchart-track{position:relative;height:20px}
+  .bchart-tick{position:absolute;top:-3px;bottom:-3px;width:0;border-left:1px dashed var(--rule)}
+  .bchart-bar{
+    position:relative;z-index:1;height:100%;border-radius:6px;min-width:4px;
+    background:linear-gradient(90deg,#B8790A 0%,var(--urine) 100%);
+    transition:width .4s ease;
+  }
+  .bchart-val{font-size:12px;font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--ink);text-align:right}
+  .bchart-axis{display:grid;grid-template-columns:64px 1fr 50px;gap:8px;margin-top:2px}
+  .bchart-axis-ticks{position:relative;height:14px}
+  .bchart-axis-ticks span{position:absolute;transform:translateX(-50%);font-size:9px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace}
+
+  /* สรุป 24 ชม. ของวันที่กำลังดู */
+  .daysum{
+    background:var(--card);border:1.5px solid var(--ok);border-radius:var(--r);
     padding:12px 16px;margin-bottom:12px;
   }
-  .asum-row{padding:6px 0;font-size:13px}
-  .asum-row:not(:last-child){border-bottom:1px dashed var(--rule)}
-  .asum-t{font-weight:600;font-size:12px;color:var(--ink-soft);margin-bottom:2px}
-  .asum-v{font-size:13px}
+  .daysum .flbl{color:var(--ok)}
+  .dsum-date{font-size:12px;color:var(--ink-soft);margin-bottom:8px}
+  .dsum-row{display:flex;flex-direction:column;gap:7px}
+  .dsum-item{display:flex;align-items:center;gap:7px;font-size:14px}
+  .dsum-item b{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--ink);font-weight:700}
 
   /* table */
   .log{background:var(--card);border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
   .log-head,.row{display:grid;grid-template-columns:38px 1fr 1fr 1fr 24px;gap:4px;align-items:center;padding:9px 10px}
   .log-head{
     font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);
-    border-bottom:1px solid var(--rule);font-weight:600;background:#F8FAFC;
+    border-bottom:1px solid var(--rule);font-weight:600;background:var(--card-2);
   }
   .row{border-bottom:1px solid var(--rule);font-size:13px}
   .row:last-child{border-bottom:none}
@@ -143,24 +156,24 @@
   .amt.p{color:var(--urine)}
   .amt.b{color:var(--stool)}
   .run{display:block;font-size:10px;color:var(--ink-soft);font-weight:400}
-  .muted{color:#C3CFD9}
+  .muted{color:#4A4F66}
   .del{
-    border:none;background:none;color:#C3CFD9;font-size:17px;cursor:pointer;padding:4px;line-height:1;
+    border:none;background:none;color:#4A4F66;font-size:17px;cursor:pointer;padding:4px;line-height:1;
   }
   .del:active{color:var(--danger)}
   .empty{padding:26px 16px;text-align:center;color:var(--ink-soft);font-size:14px;line-height:1.6}
 
   .foot{display:flex;justify-content:space-between;gap:8px;margin-top:12px}
   .ghost{
-    flex:1;border:1px solid var(--rule);background:var(--card);border-radius:10px;padding:11px;
+    flex:1;border:1px solid var(--rule);background:var(--card);border-radius:var(--rpill);padding:11px;
     font-family:inherit;font-size:13px;color:var(--ink);cursor:pointer;font-weight:500;
   }
-  .ghost:active{background:#E7EEF3}
+  .ghost:active{background:var(--card-2)}
   .ghost:disabled{opacity:.35;cursor:default;background:var(--card)}
 
   /* modal */
   .scrim{
-    position:fixed;inset:0;background:rgba(15,36,56,.45);display:none;align-items:flex-end;justify-content:center;
+    position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;
     z-index:9;
   }
   .scrim.on{display:flex}
@@ -172,29 +185,30 @@
   .modal h3{margin:0 0 14px;font-size:17px;display:flex;align-items:center;gap:8px}
   .presets{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
   .presets button{
-    border:1.5px solid var(--rule);background:var(--card);border-radius:10px;padding:12px 4px;
+    border:1.5px solid var(--rule);background:var(--card-2);border-radius:14px;padding:12px 4px;
     font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;
   }
-  .presets button.sel{border-color:currentColor;background:#F1F7FB}
+  .presets button.sel{border-color:currentColor;background:var(--card)}
   .presets.w button.sel{color:var(--water);background:var(--water-lt)}
   .presets.p button.sel{color:var(--urine);background:var(--urine-lt)}
   .presets.b button.sel{color:var(--stool);background:var(--stool-lt)}
   .field{margin-bottom:12px}
   .field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:5px;font-weight:600}
   .field input{
-    width:100%;border:1.5px solid var(--rule);border-radius:10px;padding:13px 12px;font-size:17px;
-    font-family:'IBM Plex Mono',monospace;color:var(--ink);background:#FBFDFE;
+    width:100%;border:1.5px solid var(--rule);border-radius:14px;padding:13px 12px;font-size:17px;
+    font-family:'IBM Plex Mono',monospace;color:var(--ink);background:var(--card-2);
   }
   .field input:focus{outline:2px solid var(--water);outline-offset:1px;border-color:transparent}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .acts{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:16px}
-  .acts .cancel{border:1px solid var(--rule);background:var(--card);border-radius:11px;padding:14px;font-family:inherit;font-size:15px;cursor:pointer;color:var(--ink)}
-  .acts .save{border:none;border-radius:11px;padding:14px;font-family:inherit;font-size:15px;font-weight:600;color:#fff;cursor:pointer}
+  .acts .cancel{border:1px solid var(--rule);background:var(--card-2);border-radius:var(--rpill);padding:14px;font-family:inherit;font-size:15px;cursor:pointer;color:var(--ink)}
+  .acts .save{border:none;border-radius:var(--rpill);padding:14px;font-family:inherit;font-size:15px;font-weight:700;color:#fff;cursor:pointer}
   .save.w{background:var(--water)} .save.p{background:var(--urine)} .save.b{background:var(--stool)}
 
   .toast{
     position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(60px);
-    background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;
+    background:var(--card-2);color:var(--ink);border:1px solid var(--rule);padding:10px 18px;border-radius:999px;font-size:13px;
+    box-shadow:0 4px 20px rgba(0,0,0,.5);
     opacity:0;transition:.25s;z-index:20;font-family:'IBM Plex Sans Thai',sans-serif;pointer-events:none;
   }
   .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -248,9 +262,14 @@
     <div class="fval mono" id="flowVal">ยังไม่มีข้อมูล</div>
   </div>
 
-  <div class="autosum" id="autoSumCard">
-    <div class="flbl">สรุปอัตโนมัติ (24 ชม. @06:00 · 8 ชม. @14:00)</div>
-    <div id="autoSum">ยังไม่มีสรุปอัตโนมัติ</div>
+  <div class="daysum" id="daySumCard">
+    <div class="flbl">สรุป 24 ชม. (06:00–06:00)</div>
+    <div class="dsum-date" id="daySumDate">—</div>
+    <div class="dsum-row">
+      <div class="dsum-item"><span class="dot" style="background:var(--water)"></span>ดื่ม <b id="daySumW">0 ml</b></div>
+      <div class="dsum-item"><span class="dot" style="background:var(--urine)"></span>ฉี่ <b id="daySumP">0 cc</b></div>
+      <div class="dsum-item"><span class="dot" style="background:var(--stool)"></span>ขับถ่าย <b id="daySumB">0 ครั้ง</b></div>
+    </div>
   </div>
 
   <div class="log">
@@ -283,14 +302,10 @@
   const TH_MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const PRESET_W=[150,250,350,500], PRESET_P=[100,200,300,400];
   const STOOL_TYPES=['ปกติ','เหลว','ท้องเสีย'];
-  // จุดปิดรอบสรุปแบบ รพ.: ปิดรอบที่ 06:00 มองย้อนหลัง 24 ชม. (=ของเมื่อวานเต็มวัน), ปิดรอบที่ 14:00 มองย้อนหลัง 8 ชม. (=06:00-14:00 วันนี้)
-  const CUT_POINTS=[{h:6,m:0,hours:24},{h:14,m:0,hours:8}];
-  const TRIGGER_DELAY_MS=60*1000; // เผื่อ 1 นาทีหลังถึงเวลาปิดรอบ ค่อยเช็ค/แสดงผล
 
   let entries=[];              // {id,date:'YYYY-MM-DD',time:'HH:MM',drink,pee,sec,stool,note}
   let view=todayKey();
   let mem=false;               // fallback ถ้าเซฟไม่ได้
-  let autoState={lastBoundary:0, summaries:[]};
   let undoBuffer=null;         // สำเนา entries ก่อนการลบครั้งล่าสุด (ย้อนกลับได้ 1 ขั้น)
 
   const $=id=>document.getElementById(id);
@@ -335,98 +350,25 @@
     }catch(e){ if(!mem){mem=true;toast('เซฟถาวรไม่ได้ ข้อมูลจะอยู่แค่ในหน้านี้');} }
   }
 
-  const AUTO_KEY='fluidlog:autosum:v1';
-  async function loadAuto(){
-    try{
-      if(hasCloud){
-        const r=await window.storage.get(AUTO_KEY);
-        if(r&&r.value) autoState=JSON.parse(r.value);
-      }else{
-        const raw=localStorage.getItem(AUTO_KEY);
-        if(raw) autoState=JSON.parse(raw);
-      }
-    }catch(e){}
-  }
-  async function saveAuto(){
-    const data=JSON.stringify(autoState);
-    try{ if(hasCloud) await window.storage.set(AUTO_KEY,data); else localStorage.setItem(AUTO_KEY,data); }catch(e){}
-  }
-
-  function cutDate(dateKey,cp){
-    const[y,m,d]=dateKey.split('-').map(Number);
-    return new Date(y,m-1,d,cp.h,cp.m,0,0);
-  }
-  // คืนจุดปิดรอบที่ "ถึงเวลาและพร้อมแสดงผลแล้ว" ในช่วง (fromTs, toTs]
-  function cutsReadyBetween(fromTs,toTs){
-    const result=[];
-    if(toTs<=fromTs) return result;
-    let d=new Date(fromTs); d.setHours(0,0,0,0);
-    const endDate=new Date(toTs); endDate.setHours(0,0,0,0);
-    let guard=0;
-    while(d.getTime()<=endDate.getTime() && guard<60){
-      const dk=todayKey(d);
-      CUT_POINTS.forEach(cp=>{
-        const bt=cutDate(dk,cp).getTime();
-        if(bt>fromTs && (bt+TRIGGER_DELAY_MS)<=toTs) result.push({ts:bt,cp});
-      });
-      d.setDate(d.getDate()+1);
-      guard++;
-    }
-    result.sort((a,b)=>a.ts-b.ts);
-    return result.slice(-14); // กันไล่ backlog ยาวเกินไปถ้าไม่ได้เปิดแอปนาน
-  }
-  function fmtCutLabel(ts,cp){
-    if(cp.hours===24){
-      const prevDay=new Date(ts); prevDay.setDate(prevDay.getDate()-1);
-      return '24 ชม. ของวันที่ '+prevDay.getDate()+' '+TH_MON[prevDay.getMonth()]+' (06:00–06:00)';
-    }
-    const dt=new Date(ts);
-    return '8 ชม. เช้าวันที่ '+dt.getDate()+' '+TH_MON[dt.getMonth()]+' (06:00–14:00)';
-  }
-  function windowSummary(fromTs,toTs){
-    const inWin=entries.filter(e=>{const t=entryTs(e); return t>fromTs && t<=toTs;});
+  // สรุป 24 ชม. แบบ รพ. (06:00 ของวันที่กำลังดู ถึง 06:00 ของวันถัดไป) ผูกกับปุ่มเลื่อนวัน ‹ ›
+  function daySummary24h(dayKey){
+    const[y,m,d]=dayKey.split('-').map(Number);
+    const fromTs=new Date(y,m-1,d,6,0,0,0).getTime();
+    const toTs=fromTs+24*3600*1000;
+    const inWin=entries.filter(e=>{const t=entryTs(e); return t>=fromTs && t<toTs;});
     const sw=inWin.reduce((s,e)=>s+(e.drink||0),0);
     const sp=inWin.reduce((s,e)=>s+(e.pee||0),0);
-    const stoolCounts={};
-    inWin.forEach(e=>{ if(e.stool) stoolCounts[e.stool]=(stoolCounts[e.stool]||0)+1; });
-    return {sw,sp,stoolCounts};
+    const stoolCount=inWin.reduce((s,e)=>s+(e.stool?1:0),0);
+    return {sw,sp,stoolCount};
   }
-  async function runAutoSummary(){
-    const now=Date.now();
-    if(!autoState.lastBoundary){
-      // ครั้งแรก ไม่ backfill ย้อนหลัง เริ่มนับจากนี้ไป
-      autoState.lastBoundary=now;
-      await saveAuto();
-      return;
-    }
-    const ready=cutsReadyBetween(autoState.lastBoundary,now);
-    if(!ready.length) return;
-    ready.forEach(({ts,cp})=>{
-      const fromTs=ts-cp.hours*3600*1000;
-      const sum=windowSummary(fromTs,ts);
-      autoState.summaries.unshift({ts,label:fmtCutLabel(ts,cp),hours:cp.hours,...sum});
-    });
-    autoState.summaries=autoState.summaries.slice(0,20);
-    autoState.lastBoundary=ready[ready.length-1].ts;
-    await saveAuto();
-    renderAutoSummaries();
-    toast('มีสรุปอัตโนมัติใหม่ '+ready.length+' รอบ');
-  }
-  function renderAutoSummaries(){
-    const box=$('autoSum');
-    if(!autoState.summaries.length){
-      box.textContent='ยังไม่มีสรุปอัตโนมัติ (จะสรุปให้เมื่อถึงรอบ 06:00 หรือ 14:00 ถัดไป)';
-      return;
-    }
-    box.innerHTML=autoState.summaries.slice(0,8).map(s=>{
-      const stoolTxt=Object.keys(s.stoolCounts).length
-        ? Object.entries(s.stoolCounts).map(([k,v])=>escapeHtml(k)+' '+v).join(', ')
-        : 'ไม่มี';
-      return `<div class="asum-row">
-        <div class="asum-t">${s.label}</div>
-        <div class="asum-v">ดื่ม ${s.sw.toLocaleString()} ml · ฉี่ ${s.sp.toLocaleString()} cc · ขับถ่าย ${stoolTxt}</div>
-      </div>`;
-    }).join('');
+  function renderDaySummary(){
+    const s=daySummary24h(view);
+    const[y,m,d]=view.split('-').map(Number);
+    const nextDay=new Date(y,m-1,d+1);
+    $('daySumDate').textContent=d+' '+TH_MON[m-1]+' 06:00 → '+nextDay.getDate()+' '+TH_MON[nextDay.getMonth()]+' 06:00';
+    $('daySumW').textContent=s.sw.toLocaleString()+' ml';
+    $('daySumP').textContent=s.sp.toLocaleString()+' cc';
+    $('daySumB').textContent=s.stoolCount.toLocaleString()+' ครั้ง';
   }
 
   function toast(msg){
@@ -454,6 +396,7 @@
     $('next').disabled = view===todayKey();
     $('sumW').textContent=sw.toLocaleString();
     $('sumP').textContent=sp.toLocaleString();
+    renderDaySummary();
 
     const diff=sw-sp;
     $('bal').textContent=(diff>0?'+':'')+diff.toLocaleString();
@@ -474,11 +417,30 @@
     });
     const flowKeys=Object.keys(flowGroups).map(Number).sort((a,b)=>a-b);
     if(flowKeys.length){
-      $('flowVal').innerHTML=flowKeys.map(k=>{
+      const avgs=flowKeys.map(k=>{
         const secs=flowGroups[k];
-        const avg=secs.reduce((s,x)=>s+x,0)/secs.length;
-        return `<div class="frow"><span><span class="famt">${k.toLocaleString()} มล</span> <span class="fcnt">× ${secs.length} ครั้ง</span></span><span class="favg">${fmtNum(avg)} วิ</span></div>`;
+        return secs.reduce((s,x)=>s+x,0)/secs.length;
+      });
+      const maxAvg=Math.max(...avgs);
+      const scale=Math.max(10,Math.ceil(maxAvg/10)*10);
+      const ticks=[]; for(let i=0;i<=4;i++) ticks.push(Math.round(scale*i/4));
+      const ticksHtml=ticks.map(t=>`<div class="bchart-tick" style="left:${t/scale*100}%"></div>`).join('');
+
+      const rowsHtml=flowKeys.map((k,i)=>{
+        const secs=flowGroups[k];
+        const avg=avgs[i];
+        const widthPct=Math.max(2,avg/scale*100);
+        return `<div class="bchart-row">
+          <div class="bchart-label"><b>${k.toLocaleString()}</b> มล<span class="bchart-cnt">(×${secs.length})</span></div>
+          <div class="bchart-track">${ticksHtml}<div class="bchart-bar" style="width:${widthPct}%"></div></div>
+          <div class="bchart-val">${fmtNum(avg)} วิ</div>
+        </div>`;
       }).join('');
+
+      const axisTicksHtml=ticks.map(t=>`<span style="left:${t/scale*100}%">${t}</span>`).join('');
+      const axisHtml=`<div class="bchart-axis"><div></div><div class="bchart-axis-ticks">${axisTicksHtml}</div><div></div></div>`;
+
+      $('flowVal').innerHTML=rowsHtml+axisHtml;
     }else{
       $('flowVal').textContent='ยังไม่มีข้อมูล (กรอกระยะเวลาตอนบันทึกฉี่)';
     }
@@ -659,13 +621,7 @@
     render(); toast('ล้างข้อมูลแล้ว (กดย้อนกลับได้ถ้าพลาด)');
   };
 
-  (async function init(){
-    await load();
-    await loadAuto();
-    renderAutoSummaries();
-    await runAutoSummary();
-    setInterval(runAutoSummary, 5*60*1000);
-  })();
+  load();
 })();
 
 // ใช้ออฟไลน์ได้ (ทำงานเมื่อเปิดผ่าน https หรือ localhost เท่านั้น)
