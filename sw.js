@@ -1,5 +1,5 @@
 // เก็บไฟล์แอปไว้ในเครื่อง เพื่อให้เปิดได้แม้ไม่มีเน็ต
-const CACHE = 'fluid-v9';
+const CACHE = 'fluid-v10';
 const ASSETS = [
   './',
   './index.html',

@@ -32,6 +32,8 @@
     --stool-lt:rgba(192,133,82,.16);
     --danger:#FF5C5C;
     --ok:#34D399;
+    --bp:#FF5C93;
+    --bp-lt:rgba(255,92,147,.16);
     --r:16px;
     --rpill:999px;
   }
@@ -105,6 +107,15 @@
   .add .p{background:var(--urine)}
   .add .b{background:var(--stool)}
 
+  /* แถวปุ่มวัดความดัน แยกด้านล่าง */
+  .add2{display:grid;grid-template-columns:1fr;margin:0 0 12px}
+  .add2 button{
+    border:none;border-radius:var(--rpill);padding:14px 4px;color:#fff;font-size:14px;font-weight:700;
+    font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+    background:var(--bp);
+  }
+  .add2 button:active{transform:translateY(1px);opacity:.85}
+
   /* อัตราการไหลเฉลี่ย */
   .flow{
     background:var(--card);border:1px solid var(--rule);border-radius:var(--r);
@@ -140,6 +151,23 @@
   .dsum-row{display:flex;flex-direction:column;gap:7px}
   .dsum-item{display:flex;align-items:center;gap:7px;font-size:14px}
   .dsum-item b{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--ink);font-weight:700}
+
+  /* ความดันโลหิต */
+  .bp-card{
+    background:var(--card);border:1.5px solid var(--bp);border-radius:var(--r);
+    padding:12px 16px;margin-bottom:12px;
+  }
+  .bp-card .flbl{color:var(--bp)}
+  .bp-row{display:grid;grid-template-columns:1fr auto auto 22px;align-items:center;gap:8px;padding:6px 0}
+  .bp-row:not(:last-child){border-bottom:1px dashed var(--rule)}
+  .bp-t{font-size:11px;color:var(--ink-soft)}
+  .bp-v{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--ink)}
+  .bp-s{font-size:11px;font-weight:600;white-space:nowrap}
+  .bp-s.ok{color:var(--ok)}
+  .bp-s.high{color:var(--danger)}
+  .bp-s.low{color:var(--urine)}
+  .bp-del{border:none;background:none;color:#4A4F66;font-size:16px;cursor:pointer;padding:2px;line-height:1}
+  .bp-del:active{color:var(--danger)}
 
   /* table */
   .log{background:var(--card);border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
@@ -203,7 +231,7 @@
   .acts{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:16px}
   .acts .cancel{border:1px solid var(--rule);background:var(--card-2);border-radius:var(--rpill);padding:14px;font-family:inherit;font-size:15px;cursor:pointer;color:var(--ink)}
   .acts .save{border:none;border-radius:var(--rpill);padding:14px;font-family:inherit;font-size:15px;font-weight:700;color:#fff;cursor:pointer}
-  .save.w{background:var(--water)} .save.p{background:var(--urine)} .save.b{background:var(--stool)}
+  .save.w{background:var(--water)} .save.p{background:var(--urine)} .save.b{background:var(--stool)} .save.bp{background:var(--bp)}
 
   .toast{
     position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(60px);
@@ -257,6 +285,15 @@
     <button class="b" id="addB">＋ ขับถ่าย</button>
   </div>
 
+  <div class="add2">
+    <button id="addBP">＋ วัดความดัน</button>
+  </div>
+
+  <div class="bp-card" id="bpCard">
+    <div class="flbl">ความดันโลหิต (ล่าสุด)</div>
+    <div id="bpList">ยังไม่มีข้อมูล</div>
+  </div>
+
   <div class="flow" id="flowCard">
     <div class="flbl">อัตราการไหลเฉลี่ย (ทั้งหมด)</div>
     <div class="fval mono" id="flowVal">ยังไม่มีข้อมูล</div>
@@ -308,7 +345,7 @@
   const PRESET_W=[150,250,350,500], PRESET_P=[100,200,300,400];
   const STOOL_TYPES=['ปกติ','เหลว','ท้องเสีย'];
 
-  let entries=[];              // {id,date:'YYYY-MM-DD',time:'HH:MM',drink,pee,sec,stool,note}
+  let entries=[];              // {id,date:'YYYY-MM-DD',time:'HH:MM',drink,pee,sec,stool,note,sys,dia}
   let view=todayKey();
   let mem=false;               // fallback ถ้าเซฟไม่ได้
   let undoBuffer=null;         // สำเนา entries ก่อนการลบครั้งล่าสุด (ย้อนกลับได้ 1 ขั้น)
@@ -332,6 +369,13 @@
     const[hh,mm]=e.time.split(':').map(Number);
     return new Date(y,m-1,d,hh,mm,0,0).getTime();
   }
+  // ตรรกะแปลจาก check_blood_pressure(systolic, diastolic) ของผู้ใช้
+  function bpStatus(sys,dia){
+    const sysStatus = sys>=140 ? 'สูง' : (sys<100 ? 'ต่ำ' : 'ปกติ');
+    const diaStatus = dia>=90 ? 'สูง' : (dia<60 ? 'ต่ำ' : 'ปกติ');
+    return {sysStatus,diaStatus};
+  }
+  function bpStatusClass(s){ return s==='สูง'?'high':(s==='ต่ำ'?'low':'ok'); }
 
   // เซฟได้ 2 ทาง: ในแอป Claude ใช้ window.storage / เปิดจากเบราว์เซอร์ใช้ localStorage
   const hasCloud = typeof window.storage!=='undefined' && window.storage && window.storage.get;
@@ -376,6 +420,26 @@
     $('daySumB').textContent=s.stoolCount.toLocaleString()+' ครั้ง';
   }
 
+  function fmtBpTime(e){
+    const[y,m,d]=e.date.split('-').map(Number);
+    return d+' '+TH_MON[m-1]+' '+e.time;
+  }
+  function renderBP(){
+    const list=$('bpList');
+    const bps=entries.filter(e=>e.sys>0 && e.dia>0).slice().sort((a,b)=>entryTs(b)-entryTs(a)).slice(0,10);
+    if(!bps.length){ list.textContent='ยังไม่มีข้อมูล'; return; }
+    list.innerHTML=bps.map(e=>{
+      const{sysStatus,diaStatus}=bpStatus(e.sys,e.dia);
+      const worst = (sysStatus!=='ปกติ')?sysStatus:diaStatus;
+      return `<div class="bp-row">
+        <div class="bp-t">${fmtBpTime(e)}</div>
+        <div class="bp-v mono">${e.sys}/${e.dia}</div>
+        <div class="bp-s ${bpStatusClass(worst)}">บน:${sysStatus} ล่าง:${diaStatus}</div>
+        <button class="bp-del" data-bpdel="${e.id}" aria-label="ลบ">×</button>
+      </div>`;
+    }).join('');
+  }
+
   function toast(msg){
     const t=$('toast'); t.textContent=msg; t.classList.add('on');
     clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),2200);
@@ -402,6 +466,7 @@
     $('sumW').textContent=sw.toLocaleString();
     $('sumP').textContent=sp.toLocaleString();
     renderDaySummary();
+    renderBP();
 
     const diff=sw-sp;
     $('bal').textContent=(diff>0?'+':'')+diff.toLocaleString();
@@ -450,14 +515,15 @@
       $('flowVal').textContent='ยังไม่มีข้อมูล (กรอกระยะเวลาตอนบันทึกฉี่)';
     }
 
-    // ตาราง + ยอดสะสมทุกครั้งที่กรอก
+    // ตาราง + ยอดสะสมทุกครั้งที่กรอก (ไม่รวมรายการวัดความดัน — โชว์แยกในการ์ดของตัวเอง)
     const rows=$('rows');
-    if(!list.length){
+    const tableList=list.filter(e=>e.drink||e.pee||e.stool);
+    if(!tableList.length){
       rows.innerHTML='<div class="empty">ยังไม่มีบันทึกของวันนี้<br>กดปุ่มด้านบนเพื่อเริ่ม</div>';
       return;
     }
     let rw=0,rp=0;
-    rows.innerHTML=list.map(e=>{
+    rows.innerHTML=tableList.map(e=>{
       rw+=e.drink||0; rp+=e.pee||0;
       const noteTxt = e.note ? ' · '+escapeHtml(e.note) : '';
       const cw=e.drink?`<span class="amt w mono">${e.drink.toLocaleString()}</span><span class="run mono">รวม ${rw.toLocaleString()}${noteTxt}</span>`:'<span class="muted mono">–</span>';
@@ -503,6 +569,21 @@
           <button class="cancel" id="cancel">ยกเลิก</button>
           <button class="save b" id="ok">บันทึก</button>
         </div>`;
+    }else if(kind==='bp'){
+      $('modal').innerHTML=`
+        <h3><span class="dot" style="background:var(--bp)"></span>วัดความดันได้เท่าไหร่</h3>
+        <div class="two">
+          <div class="field"><label>ตัวบน (SYS)</label><input id="sys" type="number" inputmode="numeric" min="1" placeholder="เช่น 120"></div>
+          <div class="field"><label>ตัวล่าง (DIA)</label><input id="dia" type="number" inputmode="numeric" min="1" placeholder="เช่น 80"></div>
+        </div>
+        <div class="two">
+          <div class="field"><label>วัน</label><input id="d" type="date" value="${view}"></div>
+          <div class="field"><label>เวลา</label><input id="t" type="time" value="${nowTime()}"></div>
+        </div>
+        <div class="acts">
+          <button class="cancel" id="cancel">ยกเลิก</button>
+          <button class="save bp" id="ok">บันทึก</button>
+        </div>`;
     }else{
       const w = kind==='w';
       const presets = w?PRESET_W:PRESET_P;
@@ -535,15 +616,17 @@
     }
     $('scrim').classList.add('on');
 
-    $('presets').onclick=ev=>{
-      const b=ev.target.closest('button'); if(!b)return;
-      $('presets').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));
-      b.classList.add('sel');
-      if(kind==='b'){ sel=b.dataset.v; }
-      else{ sel=+b.dataset.v; $('amt').value=sel; }
-    };
-    if(kind!=='b'){
-      $('amt').oninput=()=>{$('presets').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));};
+    if($('presets')){
+      $('presets').onclick=ev=>{
+        const b=ev.target.closest('button'); if(!b)return;
+        $('presets').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));
+        b.classList.add('sel');
+        if(kind==='b'){ sel=b.dataset.v; }
+        else{ sel=+b.dataset.v; $('amt').value=sel; }
+      };
+      if(kind!=='b'){
+        $('amt').oninput=()=>{$('presets').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));};
+      }
     }
     $('cancel').onclick=close;
     $('ok').onclick=()=>{
@@ -552,11 +635,27 @@
         entries.push({
           id:Date.now()+''+Math.random().toString(16).slice(2,6),
           date:$('d').value||view, time:$('t').value||nowTime(),
-          drink:0, pee:0, sec:0, stool:sel, note:''
+          drink:0, pee:0, sec:0, stool:sel, note:'', sys:0, dia:0
         });
         view=$('d').value||view;
         save(); close(); render();
         toast('บันทึกขับถ่าย '+sel);
+        return;
+      }
+      if(kind==='bp'){
+        const sys=parseInt($('sys').value,10);
+        const dia=parseInt($('dia').value,10);
+        if(!sys||sys<=0){ $('sys').focus(); toast('ใส่ค่าตัวบนก่อนนะ'); return; }
+        if(!dia||dia<=0){ $('dia').focus(); toast('ใส่ค่าตัวล่างก่อนนะ'); return; }
+        entries.push({
+          id:Date.now()+''+Math.random().toString(16).slice(2,6),
+          date:$('d').value||view, time:$('t').value||nowTime(),
+          drink:0, pee:0, sec:0, stool:'', note:'', sys, dia
+        });
+        view=$('d').value||view;
+        save(); close(); render();
+        const st=bpStatus(sys,dia);
+        toast('บันทึกความดัน '+sys+'/'+dia+' (บน:'+st.sysStatus+' ล่าง:'+st.diaStatus+')');
         return;
       }
       const w = kind==='w';
@@ -571,7 +670,7 @@
       entries.push({
         id:Date.now()+''+Math.random().toString(16).slice(2,6),
         date:$('d').value||view, time:$('t').value||nowTime(),
-        drink: w?v:0, pee: w?0:v, sec: w?0:sec, stool:'', note
+        drink: w?v:0, pee: w?0:v, sec: w?0:sec, stool:'', note, sys:0, dia:0
       });
       view=$('d').value||view;
       save(); close(); render();
@@ -584,6 +683,7 @@
   $('addW').onclick=()=>open('w');
   $('addP').onclick=()=>open('p');
   $('addB').onclick=()=>open('b');
+  $('addBP').onclick=()=>open('bp');
   $('prev').onclick=()=>{view=shift(view,-1);render();};
   $('next').onclick=()=>{if(view!==todayKey()){view=shift(view,1);render();}};
   $('scrim').onclick=e=>{if(e.target===$('scrim'))close();};
@@ -591,6 +691,12 @@
     const b=e.target.closest('[data-del]'); if(!b)return;
     snapshotForUndo();
     entries=entries.filter(x=>x.id!==b.dataset.del);
+    save(); render(); toast('ลบแล้ว (กดย้อนกลับได้ถ้าพลาด)');
+  };
+  $('bpList').onclick=e=>{
+    const b=e.target.closest('[data-bpdel]'); if(!b)return;
+    snapshotForUndo();
+    entries=entries.filter(x=>x.id!==b.dataset.bpdel);
     save(); render(); toast('ลบแล้ว (กดย้อนกลับได้ถ้าพลาด)');
   };
   $('undo').onclick=async()=>{
