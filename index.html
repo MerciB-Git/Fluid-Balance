@@ -141,17 +141,6 @@
   .bchart-axis-ticks{position:relative;height:14px}
   .bchart-axis-ticks span{position:absolute;transform:translateX(-50%);font-size:9px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace}
 
-  /* สรุป 24 ชม. ของวันที่กำลังดู */
-  .daysum{
-    background:var(--card);border:1.5px solid var(--ok);border-radius:var(--r);
-    padding:12px 16px;margin-bottom:12px;
-  }
-  .daysum .flbl{color:var(--ok)}
-  .dsum-date{font-size:12px;color:var(--ink-soft);margin-bottom:8px}
-  .dsum-row{display:flex;flex-direction:column;gap:7px}
-  .dsum-item{display:flex;align-items:center;gap:7px;font-size:14px}
-  .dsum-item b{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--ink);font-weight:700}
-
   /* ความดันโลหิต */
   .bp-card{
     background:var(--card);border:1.5px solid var(--bp);border-radius:var(--r);
@@ -290,23 +279,13 @@
   </div>
 
   <div class="bp-card" id="bpCard">
-    <div class="flbl">ความดันโลหิต (ล่าสุด)</div>
+    <div class="flbl">ความดันโลหิต (วันนี้)</div>
     <div id="bpList">ยังไม่มีข้อมูล</div>
   </div>
 
   <div class="flow" id="flowCard">
     <div class="flbl">อัตราการไหลเฉลี่ย (ทั้งหมด)</div>
     <div class="fval mono" id="flowVal">ยังไม่มีข้อมูล</div>
-  </div>
-
-  <div class="daysum" id="daySumCard">
-    <div class="flbl">สรุป 24 ชม. (06:00–06:00)</div>
-    <div class="dsum-date" id="daySumDate">—</div>
-    <div class="dsum-row">
-      <div class="dsum-item"><span class="dot" style="background:var(--water)"></span>ดื่ม <b id="daySumW">0 ml</b></div>
-      <div class="dsum-item"><span class="dot" style="background:var(--urine)"></span>ฉี่ <b id="daySumP">0 cc</b></div>
-      <div class="dsum-item"><span class="dot" style="background:var(--stool)"></span>ขับถ่าย <b id="daySumB">0 ครั้ง</b></div>
-    </div>
   </div>
 
   <div class="log">
@@ -400,39 +379,15 @@
   }
 
   // สรุป 24 ชม. แบบ รพ. (06:00 ของวันที่กำลังดู ถึง 06:00 ของวันถัดไป) ผูกกับปุ่มเลื่อนวัน ‹ ›
-  function daySummary24h(dayKey){
-    const[y,m,d]=dayKey.split('-').map(Number);
-    const fromTs=new Date(y,m-1,d,6,0,0,0).getTime();
-    const toTs=fromTs+24*3600*1000;
-    const inWin=entries.filter(e=>{const t=entryTs(e); return t>=fromTs && t<toTs;});
-    const sw=inWin.reduce((s,e)=>s+(e.drink||0),0);
-    const sp=inWin.reduce((s,e)=>s+(e.pee||0),0);
-    const stoolCount=inWin.reduce((s,e)=>s+(e.stool?1:0),0);
-    return {sw,sp,stoolCount};
-  }
-  function renderDaySummary(){
-    const s=daySummary24h(view);
-    const[y,m,d]=view.split('-').map(Number);
-    const nextDay=new Date(y,m-1,d+1);
-    $('daySumDate').textContent=d+' '+TH_MON[m-1]+' 06:00 → '+nextDay.getDate()+' '+TH_MON[nextDay.getMonth()]+' 06:00';
-    $('daySumW').textContent=s.sw.toLocaleString()+' ml';
-    $('daySumP').textContent=s.sp.toLocaleString()+' cc';
-    $('daySumB').textContent=s.stoolCount.toLocaleString()+' ครั้ง';
-  }
-
-  function fmtBpTime(e){
-    const[y,m,d]=e.date.split('-').map(Number);
-    return d+' '+TH_MON[m-1]+' '+e.time;
-  }
   function renderBP(){
     const list=$('bpList');
-    const bps=entries.filter(e=>e.sys>0 && e.dia>0).slice().sort((a,b)=>entryTs(b)-entryTs(a)).slice(0,10);
-    if(!bps.length){ list.textContent='ยังไม่มีข้อมูล'; return; }
+    const bps=ofDay(view).filter(e=>e.sys>0 && e.dia>0);
+    if(!bps.length){ list.textContent='ยังไม่มีข้อมูลวันนี้'; return; }
     list.innerHTML=bps.map(e=>{
       const{sysStatus,diaStatus}=bpStatus(e.sys,e.dia);
       const worst = (sysStatus!=='ปกติ')?sysStatus:diaStatus;
       return `<div class="bp-row">
-        <div class="bp-t">${fmtBpTime(e)}</div>
+        <div class="bp-t">${e.time}</div>
         <div class="bp-v mono">${e.sys}/${e.dia}</div>
         <div class="bp-s ${bpStatusClass(worst)}">บน:${sysStatus} ล่าง:${diaStatus}</div>
         <button class="bp-del" data-bpdel="${e.id}" aria-label="ลบ">×</button>
@@ -465,7 +420,6 @@
     $('next').disabled = view===todayKey();
     $('sumW').textContent=sw.toLocaleString();
     $('sumP').textContent=sp.toLocaleString();
-    renderDaySummary();
     renderBP();
 
     const diff=sw-sp;
